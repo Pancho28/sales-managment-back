@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dtos/login.dto';
-import { LoginSerializer } from "./serialaizers/login.serializer";
-import { compare } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { UserService } from '../users/user.service';
 import { User } from '../users/entities/user.entity';
 

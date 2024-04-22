@@ -7,7 +7,6 @@ export class LoginDto {
     @IsString()
     email: string;
 
-
     @MaxLength(20)
     @IsNotEmpty()
     @IsString()

@@ -1,9 +1,11 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User } from "./entities/user.entity";
-import { CreateUserDto } from "./dtos/createUser.dto";
+import { Local } from "../orders/entities";
+import { CreateUserLocalDto } from "./dtos";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { hash } from 'bcryptjs';
 
 @Injectable()
 export class UserService implements OnModuleInit{
@@ -13,6 +15,8 @@ export class UserService implements OnModuleInit{
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(Local)
+        private localRepository: Repository<Local>,
         private readonly configService: ConfigService
     )
     {
@@ -35,9 +39,9 @@ export class UserService implements OnModuleInit{
                 status,
                 role,
                 lastLogin: null
-            })
-            this.logger.log(`Creating default user with email ${email}`)
+            });
             await this.userRepository.save(superUser);
+            this.logger.log(`Creating default user with email ${email}`);
         }
     }
 
@@ -74,8 +78,10 @@ export class UserService implements OnModuleInit{
 
     async getUsers(user: User) : Promise<User[]> {     
         this.validateAdmin(user);
-        const users = await this.userRepository.find()
-        return users.filter(user => user.role != 'ADMIN');
+        const users = await this.userRepository.createQueryBuilder('user')
+                                                .where('user.role != :role', { role : 'ADMIN' })
+                                                .getMany();
+        return users;
     }
 
     async updateLastLogin(user: User) : Promise<void> {
@@ -83,18 +89,28 @@ export class UserService implements OnModuleInit{
         await this.userRepository.save(user);
     }
 
-    async createUser(user: User, dto: CreateUserDto) : Promise<User> {
+    async createUser(user: User, dto: CreateUserLocalDto) : Promise<any> {
         this.validateAdmin(user);
         const userExist = await this.userRepository.findOneBy({ email: dto.email });
         if (userExist) {
-            this.logger.error(`User with email ${dto.email} already exist`);
+            this.logger.error(`User with email ${userExist.email} already exist`);
             throw new BadRequestException('Usuario ya existe');
-        }
-        dto.lastLogin = null;
-        let newUser: User = this.userRepository.create(dto);
+        };
+        const newUser = this.userRepository.create({
+            email: dto.email,
+            password: dto.password,
+            lastLogin: null
+        });
         await this.userRepository.save(newUser);
-        this.logger.log(`User with email ${dto.email} created`);
-        return newUser;
+        this.logger.log(`User with email ${newUser.email} created`);
+        const newLocal =  this.localRepository.create({
+            name: dto.name,
+            dolar: dto.dolar,
+            user: newUser
+        });
+        await this.localRepository.save(newLocal);
+        this.logger.log(`Local with name ${newLocal.name} created`); 
+        return {newUser, newLocal};
     }
 
     async activateUser(user: User, id: string) : Promise<void> {
@@ -115,6 +131,14 @@ export class UserService implements OnModuleInit{
         inactivateUser.status = 'INACTIVE';
         await this.userRepository.save(inactivateUser);
         this.logger.log(`User with email ${inactivateUser.email} inactivated`);
+    }
+
+    async changePassword(user: User, id: string, newPassword: string) {
+        this.validateAdmin(user);
+        const newPasswordUser = await this.getUserById(id);
+        newPasswordUser.password = await  hash(newPassword, 10);
+        await this.userRepository.save(newPasswordUser);
+        this.logger.log(`Password changed for user with email ${newPasswordUser.email}`);
     }
 
 }

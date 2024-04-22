@@ -20,7 +20,7 @@ export class Category {
     @CreateDateColumn({ type: 'datetime', readonly: true})
     creationDate: Date;
 
-    @CreateDateColumn({ type: 'datetime'})
+    @CreateDateColumn({ type: 'datetime', nullable: true})
     updateDate: Date;
 
     @OneToMany(() => Product, product => product.category)

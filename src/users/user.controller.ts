@@ -3,7 +3,7 @@ import { UserService } from "./user.service";
 import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { User } from './entities/user.entity';
-import { CreateUserDto } from './dtos/createUser.dto';
+import { CreateUserLocalDto, ChangePasswordDto } from './dtos';
 
 @Controller('users')
 export class UserController {
@@ -69,10 +69,10 @@ export class UserController {
     @HttpCode(HttpStatus.CREATED)
     async createUser(
         @GetUser() user: User,
-        @Body() userData: CreateUserDto
+        @Body() data: CreateUserLocalDto
     ): Promise<any> {
 
-        await this.userService.createUser(user,userData);
+        await this.userService.createUser(user,data);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -109,6 +109,23 @@ export class UserController {
         return {
             statusCode: HttpStatus.CREATED,
             message: 'User inactivated successfully'
+        };
+    }
+
+    @Put('/changepassword/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async changePassword(
+        @GetUser() user: User,
+        @Param('id') id: string,
+        @Body() data: ChangePasswordDto
+    ): Promise<any> {
+
+        await this.userService.changePassword(user,id,data.password);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Password changed successfully'
         };
     }
 
