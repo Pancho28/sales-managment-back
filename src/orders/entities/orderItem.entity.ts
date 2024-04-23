@@ -5,14 +5,15 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
-import { Order, Product } from "./";
+import { Order } from "./";
+import { Product } from "../../products/entities";
   
   
 @Entity()
 export class OrderItem {
   
     @PrimaryGeneratedColumn("uuid")
-    orderItemId: string;
+    id: string;
   
     @Column({ type: 'int' })
     quantity: number;
@@ -20,11 +21,11 @@ export class OrderItem {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
-    @ManyToOne(type => Order, order => order.orderId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Order, order => order.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     order: Order;
 
-    @ManyToOne(type => Product, product => product.productId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Product, product => product.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     product: Product;
     

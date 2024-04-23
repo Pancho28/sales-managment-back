@@ -11,7 +11,7 @@ import { Order } from "./";
 export class PaymentType {
   
     @PrimaryGeneratedColumn("uuid")
-    paymentTypeId: string;
+    id: string;
   
     @Column({type: 'varchar'})
     name: string;

@@ -7,14 +7,16 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
-import { OrderItem, Local, Category } from "./";
+import { Category } from "./";
+import { Local } from "../../users/entities";
+import { OrderItem } from "../../orders/entities";
   
   
 @Entity()
 export class Product {
   
     @PrimaryGeneratedColumn("uuid")
-    productId: string;
+    id: string;
   
     @Column({type: 'varchar'})
     name: string;
@@ -22,7 +24,7 @@ export class Product {
     @Column({ type: 'varchar', default: 'ACTIVE'})
     status: string;    
   
-    @Column({ type: 'int' })
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
   
     @CreateDateColumn({ type: 'datetime', readonly: true})
@@ -34,11 +36,11 @@ export class Product {
     @OneToMany(() => OrderItem, orderItem => orderItem.product)
     orderItem: OrderItem;
 
-    @ManyToOne(type => Local, local => local.localId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Local, local => local.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     local: Local;
 
-    @ManyToOne(type => Category, category => category.categoryId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Category, category => category.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     category: Category;
 

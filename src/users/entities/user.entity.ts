@@ -9,18 +9,18 @@ import {
 } from 'typeorm';
 import { hash } from 'bcryptjs';
 import { UserAccess } from './userAccess.entity';
-import { Local } from "../../orders/entities/local.entity";
+import { Local } from "./local.entity";
 
 
 @Entity()
 export class User {
 
   @PrimaryGeneratedColumn("uuid")
-  userId: string;
+  id: string;
 
   @Column({type: 'varchar'})
-  @Unique(['email'])
-  email: string;
+  @Unique(['username'])
+  username: string;
 
   @Column()
   password: string;

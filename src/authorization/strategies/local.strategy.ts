@@ -10,13 +10,13 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
         private readonly authorizationService: AuthorizationService
     ) {
         super({
-            usernameField: 'email',
+            usernameField: 'username',
             passwordField: 'password',
         })
     }
 
-    async validate(email: string, password: string) {
-        const user = await this.authorizationService.validateUser(email, password);
+    async validate(username: string, password: string) {
+        const user = await this.authorizationService.validateUser(username, password);
         if (!user) throw new UnauthorizedException('La contraseña es incorrecta');
         return user;
     }

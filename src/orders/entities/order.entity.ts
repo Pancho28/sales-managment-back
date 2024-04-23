@@ -7,14 +7,15 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
-import { Local, PaymentType, OrderItem } from "./";
+import { PaymentType, OrderItem } from "./";
+import { Local } from "../../users/entities";
   
   
 @Entity()
 export class Order {
   
     @PrimaryGeneratedColumn("uuid")
-    orderId: string;
+    id: string;
   
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalDl: number;
@@ -25,11 +26,11 @@ export class Order {
     @CreateDateColumn({ type: 'timestamp', readonly: true})
     creationDate: Date;
 
-    @ManyToOne(type => Local, local => local.localId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Local, local => local.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     local: Local;
 
-    @ManyToOne(type => PaymentType, paymentType => paymentType.paymentTypeId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => PaymentType, paymentType => paymentType.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     paymentType: PaymentType;
 

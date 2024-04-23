@@ -3,7 +3,7 @@ import { UserService } from "./user.service";
 import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { User } from './entities/user.entity';
-import { CreateUserLocalDto, ChangePasswordDto } from './dtos';
+import { CreateUserLocalDto, ChangePasswordDto, UpdateDolarlDto } from './dtos';
 
 @Controller('users')
 export class UserController {
@@ -46,21 +46,21 @@ export class UserController {
         };
     }
 
-    @Get('email/:email')
+    @Get('username/:username')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async getUserByEmail(
+    async getUserByUsername(
         @GetUser() user: User,
-        @Param('email') email: string
+        @Param('username') username: string
     ): Promise<any> {
         
-        const userByEmail = await this.userService.getUserByEmail(email,user);
+        const userByUsername = await this.userService.getUserByUsername(username,user);
 
-        delete userByEmail.password;
+        delete userByUsername.password;
 
         return {
             statusCode: HttpStatus.OK,
-            user: userByEmail
+            user: userByUsername
         };
     }
 
@@ -126,6 +126,22 @@ export class UserController {
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Password changed successfully'
+        };
+    }
+
+    @Put('dolar/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async updateDolar(
+        @Param('id') id: string,
+        @Body() dto: UpdateDolarlDto
+    ): Promise<any> {
+
+        await this.userService.updateDolar(id,dto.dolar);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Dolar updated successfully'
         };
     }
 

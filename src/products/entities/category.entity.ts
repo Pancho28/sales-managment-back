@@ -12,7 +12,7 @@ import { Product } from "./";
 export class Category {
   
     @PrimaryGeneratedColumn("uuid")
-    categoryId: string;
+    id: string;
   
     @Column({type: 'varchar'})
     name: string;

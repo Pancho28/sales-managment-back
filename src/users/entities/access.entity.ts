@@ -12,7 +12,7 @@ import { UserAccess } from './userAccess.entity';
 export class Access {
   
     @PrimaryGeneratedColumn("uuid")
-    accessId: string;
+    id: string;
   
     @Column({type: 'varchar'})
     name: string;

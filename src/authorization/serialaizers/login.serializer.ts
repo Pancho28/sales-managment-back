@@ -1,8 +1,8 @@
 export class LoginSerializer {
 
-    userId: string;
+    id: string;
 
-    email: string;
+    username: string;
 
     role: string;
 

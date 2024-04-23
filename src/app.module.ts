@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { UserModule } from './users/user.module';
 import { OrderModule } from "./orders/order.module";
+import { ProductModule } from "./products/product.module";
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { OrderModule } from "./orders/order.module";
     }),
     AuthorizationModule,
     UserModule,
-    OrderModule
+    OrderModule,
+    ProductModule
   ],
   controllers: [],
   providers: [],

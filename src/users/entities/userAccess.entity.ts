@@ -14,13 +14,13 @@ import { Access } from "./access.entity";
 export class UserAccess {
   
     @PrimaryGeneratedColumn("uuid")
-    userAccessId: string;
+    id: string;
   
-    @ManyToOne(type => User, user => user.userId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => User, user => user.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     user: User;
   
-    @ManyToOne(type => Access, access => access.accessId , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Access, access => access.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     access: Access;
   

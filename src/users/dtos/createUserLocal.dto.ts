@@ -1,11 +1,10 @@
-import { IsNumber, IsNotEmpty, IsString, MaxLength, IsEmail, IsEmpty } from "class-validator";
+import { IsNumber, IsNotEmpty, IsString, MaxLength, IsEmpty, IsPositive } from "class-validator";
 
 export class CreateUserLocalDto {
     
     @IsNotEmpty()
-    @IsEmail()
     @IsString()
-    email: string;
+    username: string;
 
     @MaxLength(20)
     @IsNotEmpty()
@@ -22,6 +21,7 @@ export class CreateUserLocalDto {
 
     @IsNotEmpty()
     @IsNumber()
+    @IsPositive()
     dolar: number;
 
 }

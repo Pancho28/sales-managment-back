@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrderModule } from "../orders/order.module";
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { User, Access, UserAccess } from './entities';
-import { Local } from "../orders/entities";
+import { User, Access, UserAccess, Local } from './entities';
 
 @Module({
     imports: [
@@ -13,8 +11,7 @@ import { Local } from "../orders/entities";
             Access,
             UserAccess,
             Local
-        ]),
-        OrderModule
+        ])
     ],
     controllers: [UserController],
     providers: [UserService],

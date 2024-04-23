@@ -18,8 +18,8 @@ export class AuthorizationService {
     this.logger = new Logger(AuthorizationService.name);
   }
 
-  async validateUser(email: string, password: string) {
-      const user = await this.userService.getUserByEmail(email);
+  async validateUser(username: string, password: string) {
+      const user = await this.userService.getUserByUsername(username);
       
       if (user && await compare(password, user.password)){ return user};
 
@@ -27,18 +27,18 @@ export class AuthorizationService {
   }
 
   async login( loginDto : LoginDto ) : Promise<any> { 
-    const user: User = await this.userService.getUserByEmail(loginDto.email); 
-    const {userId, email, role, status} = user;
-    const payload = { sub: userId };
+    const user: User = await this.userService.getUserByUsername(loginDto.username); 
+    const {id, username, role, status} = user;
+    const payload = { sub: id };
     const response = {
-        userId,
-        email,
-        role,
-        status,
-        accessToken: this.jwtService.sign(payload)
+      id,
+      username,
+      role,
+      status,
+      accessToken: this.jwtService.sign(payload)
     } 
     await this.userService.updateLastLogin(user);
-    this.logger.log(`Login attempt with email: ${loginDto.email}`);
+    this.logger.log(`Login attempt with username: ${loginDto.username}`);
     return response;
   }
 
