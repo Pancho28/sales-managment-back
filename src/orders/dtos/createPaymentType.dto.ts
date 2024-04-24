@@ -1,13 +1,15 @@
 import { IsNotEmpty, IsString, MaxLength, IsEmpty } from "class-validator";
 
-export class CategoryDto {
+export class CreatePaymentTypeDto {
         
     @MaxLength(50)
     @IsNotEmpty()
     @IsString()
     name: string;
 
-    @IsEmpty()
-    updateDate: Date; 
+    @MaxLength(50)
+    @IsNotEmpty()
+    @IsString()
+    currency: string; 
 
 }

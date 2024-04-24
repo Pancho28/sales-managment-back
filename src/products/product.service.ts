@@ -127,4 +127,18 @@ export class ProductService {
         return category;
     }
 
+    async getProductsSummaryByPrice(localId: string) {
+        const productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")
+          .select("SUM(order_item.quantity) AS quantity", "quantity")
+          .addSelect("order_item.price", "price")
+          .addSelect("product.name", "name")
+          .innerJoin("order_item", "order_item.productId = product.id")
+          .where("p.localId = :localId", { localId })
+          .groupBy("order_item.price")
+          .addGroupBy("product.name")
+          .getRawMany();
+      
+        return productsSummaryByPrice;
+    }
+
 }

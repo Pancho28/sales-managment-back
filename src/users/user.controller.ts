@@ -46,7 +46,7 @@ export class UserController {
         };
     }
 
-    @Get('username/:username')
+    @Get('/username/:username')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getUserByUsername(
@@ -129,7 +129,7 @@ export class UserController {
         };
     }
 
-    @Put('dolar/:id')
+    @Put('/dolar/:id')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async updateDolar(

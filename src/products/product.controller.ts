@@ -63,7 +63,7 @@ export class ProductController {
         };
     }
 
-    @Post('category')
+    @Post('/category')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async createCategory(
@@ -80,7 +80,7 @@ export class ProductController {
         };
     }
 
-    @Put('category/:id')
+    @Put('/category/:id')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async updtateCategory(
@@ -95,6 +95,22 @@ export class ProductController {
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Category updated successfully',
+        };
+    }
+
+    @Get('/summaryByPrice/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getSummaryByPrice(
+        @Param('id') id: string
+    ): Promise<any> {
+        let summary: any;
+
+        summary = await this.productService.getProductsSummaryByPrice(id);
+
+        return {
+            statusCode: HttpStatus.OK,
+            summary
         };
     }
 

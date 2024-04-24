@@ -1,6 +1,8 @@
-import { IsNumber, IsNotEmpty, IsUUID, IsPositive } from "class-validator";
+import { IsNumber, IsNotEmpty, IsUUID, IsPositive, ValidateNested } from "class-validator";
+import { Type } from 'class-transformer';
+import { CreateOrderItemDto } from "./createOrdemItem.dto";
 
-export class CreateorderDto {
+export class CreateOrderDto {
         
     @IsNotEmpty()
     @IsNumber()
@@ -19,5 +21,10 @@ export class CreateorderDto {
     @IsNotEmpty()
     @IsUUID()
     paymentTypeId: string;
+
+    @IsNotEmpty()
+    @ValidateNested()
+    @Type(() => CreateOrderItemDto)
+    items: CreateOrderItemDto[];
 
 }
