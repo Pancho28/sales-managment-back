@@ -3,7 +3,8 @@ import { UserService } from "./user.service";
 import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { User } from './entities/user.entity';
-import { CreateUserLocalDto, ChangePasswordDto, UpdateDolarlDto } from './dtos';
+import { CreateUserLocalDto, ChangePasswordDto, UpdateDolarlDto, CreateAccessDto, 
+    UpdateAccessDto, GrantUserAccessDto, RemoveUserAccessDto, UpdateLocalNameDto } from './dtos';
 
 @Controller('users')
 export class UserController {
@@ -33,10 +34,10 @@ export class UserController {
     @HttpCode(HttpStatus.OK)
     async getUserById(
         @GetUser() user: User,
-        @Param('id') id: string
+        @Param('id') userId: string
     ): Promise<any> {
         
-        const userById = await this.userService.getUserById(id,user);
+        const userById = await this.userService.getUserById(userId,user);
 
         delete userById.password;
 
@@ -85,10 +86,10 @@ export class UserController {
     @HttpCode(HttpStatus.CREATED)
     async activateUser(
         @GetUser() user: User,
-        @Param('id') id: string,
+        @Param('id') userId: string,
     ): Promise<any> {
 
-        await this.userService.activateUser(user,id);
+        await this.userService.activateUser(user,userId);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -101,10 +102,10 @@ export class UserController {
     @HttpCode(HttpStatus.CREATED)
     async inactivateUser(
         @GetUser() user: User,
-        @Param('id') id: string,
+        @Param('id') userId: string,
     ): Promise<any> {
 
-        await this.userService.inactivateUser(user,id);
+        await this.userService.inactivateUser(user,userId);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -117,11 +118,11 @@ export class UserController {
     @HttpCode(HttpStatus.CREATED)
     async changePassword(
         @GetUser() user: User,
-        @Param('id') id: string,
+        @Param('id') userId: string,
         @Body() data: ChangePasswordDto
     ): Promise<any> {
 
-        await this.userService.changePassword(user,id,data.password);
+        await this.userService.changePassword(user,userId,data.password);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -133,15 +134,112 @@ export class UserController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async updateDolar(
-        @Param('id') id: string,
+        @Param('id') localId: string,
         @Body() dto: UpdateDolarlDto
     ): Promise<any> {
 
-        await this.userService.updateDolar(id,dto.dolar);
+        await this.userService.updateDolar(localId,dto.dolar);
 
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Dolar updated successfully'
+        };
+    }
+
+    @Put('/local/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async updateLocal(
+        @Param('id') localId: string,
+        @Body() dto: UpdateLocalNameDto
+    ): Promise<any> {
+
+        await this.userService.updateLocalName(localId,dto.name);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Local name updated successfully'
+        };
+    }
+
+    @Post('/access')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async createAccess(
+        @GetUser() user: User,
+        @Body() dto: CreateAccessDto
+    ): Promise<any> {
+
+        await this.userService.createAccess(user,dto);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Access created'
+        };
+    }
+
+    @Put('/access/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async updateAccess(
+        @GetUser() user: User,
+        @Param('id') accessId: string,
+        @Body() dto: UpdateAccessDto
+    ): Promise<any> {
+
+        await this.userService.updateAccess(user,accessId,dto);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Access updated'
+        };
+    }
+
+    @Post('/assignaccess')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async assignAccess(
+        @GetUser() user: User,
+        @Body() dto: GrantUserAccessDto
+    ): Promise<any> {
+
+        await this.userService.assignAccess(user,dto);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Access assigned'
+        };
+    }
+
+    @Post('/removeaccess')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async removeAccess(
+        @GetUser() user: User,
+        @Body() dto: RemoveUserAccessDto
+    ): Promise<any> {
+
+        await this.userService.removeAccess(user,dto);
+
+        return {
+            statusCode: HttpStatus.OK,
+            message: 'Access removed'
+        };
+    }
+
+    @Put('/assignaccess')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async changePasswordAccess(
+        @GetUser() user: User,
+        @Body() dto: GrantUserAccessDto
+    ): Promise<any> {
+
+        await this.userService.changePasswordAccess(user,dto);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Password changed'
         };
     }
 

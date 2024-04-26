@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { User, Local } from '../users/entities';
 import { Product, Category } from "./entities";
 import { CreateProductDto, CategoryDto, UpdateProductDto } from "./dtos";
@@ -25,7 +25,12 @@ export class ProductService {
     async getProducts(localId: string) : Promise<Product[]> {     
         const products = await this.productRepository.createQueryBuilder('product')
                                                     .where('product.localId = :localId', { localId })
+                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
                                                     .getMany();
+        if(!products){
+            this.logger.error(`Products not found`);
+            throw new NotFoundException(`Productos no encontrados`);
+        }
         return products;
     }
 
@@ -89,7 +94,7 @@ export class ProductService {
     async createCategory(user: User, category: CategoryDto) : Promise<Category> {
         if (user.role != 'ADMIN'){
             this.logger.error(`User with username ${user.username} not have permission to create category`);
-            throw new BadRequestException('Usuario no tiene permiso');
+            throw new UnauthorizedException('Usuario no tiene permiso');
         }
         const categoryExist = await this.categoryRepository.findOneBy({ name: category.name });
         if (categoryExist){
@@ -108,7 +113,7 @@ export class ProductService {
     async updateCategory(user: User, categoryDto: CategoryDto, categoryId: string) : Promise<Category> {
         if (user.role != 'ADMIN'){
             this.logger.error(`User with username ${user.username} not have permission to update category`);
-            throw new BadRequestException('Usuario no tiene permiso');
+            throw new UnauthorizedException('Usuario no tiene permiso');
         }
         const category = await this.categoryRepository.findOneBy({ id: categoryId });
         if (!category){
@@ -127,6 +132,45 @@ export class ProductService {
         return category;
     }
 
+    async getCategories() : Promise<Category[]> {
+        const categories = await this.categoryRepository.find();
+        if (!categories){
+            this.logger.error(`Categories not found`);
+            throw new NotFoundException(`Categorias no encontradas`);
+        }
+        return categories;
+    }
+
+    async activeProduct(localId: string, productId: string) : Promise<Product> {
+        const product = await this.productRepository.createQueryBuilder('product')
+                                                    .where('product.id = :productId', { productId })
+                                                    .andWhere('product.localId = :localId', { localId })
+                                                    .getOne();;
+        if (!product){
+            this.logger.error(`Product with id ${productId} not found`);
+            throw new NotFoundException(`Producto con id ${productId} no encontrado`);
+        }
+        product.status = 'ACTIVE';
+        await this.productRepository.save(product);
+        this.logger.log(`Product with id ${productId} activated`);
+        return product;
+    }
+
+    async inactiveProduct(localId: string, productId: string) : Promise<Product> {
+        const product = await this.productRepository.createQueryBuilder('product')
+                                                    .where('product.id = :productId', { productId })
+                                                    .andWhere('product.localId = :localId', { localId })
+                                                    .getOne();;
+        if (!product){
+            this.logger.error(`Product with id ${productId} not found`);
+            throw new NotFoundException(`Producto con id ${productId} no encontrado`);
+        }
+        product.status = 'INACTIVE';
+        await this.productRepository.save(product);
+        this.logger.log(`Product with id ${productId} inactivated`);
+        return product;
+    }
+
     async getProductsSummaryByPrice(localId: string) {
         const productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")
           .select("SUM(order_item.quantity) AS quantity", "quantity")
@@ -137,7 +181,10 @@ export class ProductService {
           .groupBy("order_item.price")
           .addGroupBy("product.name")
           .getRawMany();
-      
+        if (!productsSummaryByPrice) {
+            this.logger.error(`Products not found`);
+            throw new NotFoundException(`Productos no encontrados`);
+        }
         return productsSummaryByPrice;
     }
 

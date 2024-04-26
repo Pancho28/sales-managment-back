@@ -1,8 +1,8 @@
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 
-export class CreatePaymentTypeDto {
-        
-    @MaxLength(50)
+export class CreateAccessDto {
+    
+    @MaxLength(20)
     @IsNotEmpty()
     @IsString()
     name: string;
@@ -10,6 +10,6 @@ export class CreatePaymentTypeDto {
     @MaxLength(50)
     @IsNotEmpty()
     @IsString()
-    currency: string; 
+    description: string;
 
 }

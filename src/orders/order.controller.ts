@@ -4,6 +4,7 @@ import { GetUser } from '../authorization/decorators';
 import { OrderService } from "./order.service";
 import { CreateOrderDto, CreatePaymentTypeDto } from "./dtos";
 import { User } from "../users/entities";
+import { Order } from "./entities";
 
 @Controller('orders')
 export class OrderController {
@@ -11,6 +12,48 @@ export class OrderController {
     constructor(
         private readonly orderService: OrderService,
     ) {}
+
+    @Get()
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getOrders(
+        @GetUser() user: User
+    ) : Promise<any> {
+        let orders : Order[];
+        orders = await this.orderService.getOrders(user);
+        return {
+            statusCode: HttpStatus.OK,
+            orders
+        };
+    }
+
+    @Get("/ordersByLocal/:id")
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getOrdersByLocal(
+        @Param('id') localId: string
+    ) : Promise<any> {
+        let orders : Order[];
+        orders = await this.orderService.getOrdersByLocal(localId);
+        return {
+            statusCode: HttpStatus.OK,
+            orders
+        };
+    }
+
+    @Get(":id")
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getOrderById(
+        @Param('id') orderId: string
+    ) : Promise<any> {
+        let order : Order;
+        order = await this.orderService.getOrderById(orderId);
+        return {
+            statusCode: HttpStatus.OK,
+            order
+        };
+    }
     
     @Post()
     @UseGuards(JwtAuthGuard)
@@ -30,9 +73,9 @@ export class OrderController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrdersSummaryByPaymentType(
-        @Param('id') id: string
+        @Param('id') localId: string
     ) : Promise<any> {
-        const summary = await this.orderService.getOrdersSummaryByPaymentType(id);
+        const summary = await this.orderService.getOrdersSummaryByPaymentType(localId);
         return {
             statusCode: HttpStatus.OK,
             summary
@@ -50,6 +93,32 @@ export class OrderController {
         return {
             statusCode: HttpStatus.CREATED,
             message: 'PaymentType created'
+        };
+    }
+
+    @Put('/paymentType/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async updatePaymentType(
+        @GetUser() user: User,
+        @Param('id') paymentTypeId: string,
+        @Body() dto: CreatePaymentTypeDto
+    ): Promise<any> {
+        await this.orderService.updatePaymentType(user, paymentTypeId, dto);
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'PaymentType updated'
+        };
+    }
+
+    @Get('/paymentType')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getPaymentTypes(): Promise<any> {
+        const paymentTypes = await this.orderService.getPaymentTypes();
+        return {
+            statusCode: HttpStatus.OK,
+            paymentTypes
         };
     }
 

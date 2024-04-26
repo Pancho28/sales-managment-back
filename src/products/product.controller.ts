@@ -17,11 +17,11 @@ export class ProductController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getProducts(
-        @Param('id') id: string
+        @Param('id') localId: string
     ): Promise<any> {
         let products: Product[];
 
-        products = await this.productService.getProducts(id);
+        products = await this.productService.getProducts(localId);
 
         return {
             statusCode: HttpStatus.OK,
@@ -33,12 +33,12 @@ export class ProductController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async createProduct(
-        @Param('id') id: string,
+        @Param('id') localId: string,
         @Body() product: CreateProductDto
     ): Promise<any> {
         let newProduct: Product;
 
-        newProduct = await this.productService.createProduct(id, product);
+        newProduct = await this.productService.createProduct(localId, product);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -50,16 +50,50 @@ export class ProductController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async updateProduct(
-        @Param('id') id: string,
+        @Param('id') localId: string,
         @Body() product: UpdateProductDto
     ): Promise<any> {
         let newProduct: Product;
 
-        newProduct = await this.productService.updateProduct(id, product);
+        newProduct = await this.productService.updateProduct(localId, product);
 
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Product updated successfully',
+        };
+    }
+
+    @Put('/active/:localId/:productId')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async activeProduct(
+        @Param('productId') productId: string,
+        @Param('localId') localId: string
+    ): Promise<any> {
+        let newProduct: Product;
+
+        newProduct = await this.productService.activeProduct(localId,productId);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Product activated successfully',
+        };
+    }
+
+    @Put('/inactive/:localId/:productId')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async inactiveProduct(
+        @Param('productId') productId: string,
+        @Param('localId') localId: string
+    ): Promise<any> {
+        let newProduct: Product;
+
+        newProduct = await this.productService.inactiveProduct(localId,productId);
+
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Product inactivated successfully',
         };
     }
 
@@ -85,12 +119,12 @@ export class ProductController {
     @HttpCode(HttpStatus.CREATED)
     async updtateCategory(
         @Body() category: CategoryDto,
-        @Param('id') id: string,
+        @Param('id') categoryId: string,
         @GetUser() user: User
     ): Promise<any> {
         let newCategory: Category;
 
-        newCategory = await this.productService.updateCategory(user,category,id);
+        newCategory = await this.productService.updateCategory(user,category,categoryId);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -98,15 +132,29 @@ export class ProductController {
         };
     }
 
+    @Get('/category')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getCategories(): Promise<any> {
+        let categories: Category[];
+
+        categories = await this.productService.getCategories();
+
+        return {
+            statusCode: HttpStatus.OK,
+            categories
+        };
+    }
+
     @Get('/summaryByPrice/:id')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getSummaryByPrice(
-        @Param('id') id: string
+        @Param('id') localId: string
     ): Promise<any> {
         let summary: any;
 
-        summary = await this.productService.getProductsSummaryByPrice(id);
+        summary = await this.productService.getProductsSummaryByPrice(localId);
 
         return {
             statusCode: HttpStatus.OK,

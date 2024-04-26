@@ -2,6 +2,7 @@ import { IsNumber, IsNotEmpty, IsString, MaxLength, IsEmpty, IsPositive } from "
 
 export class CreateUserLocalDto {
     
+    @MaxLength(20)
     @IsNotEmpty()
     @IsString()
     username: string;
