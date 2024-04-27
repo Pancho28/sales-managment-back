@@ -7,7 +7,7 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
-import { PaymentType, OrderItem } from "./";
+import { OrderItem } from "./";
 import { Local } from "../../users/entities";
   
   
@@ -29,10 +29,6 @@ export class Order {
     @ManyToOne(type => Local, local => local.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     local: Local;
-
-    @ManyToOne(type => PaymentType, paymentType => paymentType.id , {onDelete: 'CASCADE'})
-    @JoinColumn()
-    paymentType: PaymentType;
 
     @OneToMany(() => OrderItem, orderItem => orderItem.order)
     orderItem: OrderItem;

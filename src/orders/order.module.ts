@@ -4,7 +4,7 @@ import { UserModule } from "../users/user.module";
 import { ProductModule } from "../products/product.module";
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
-import { Order, OrderItem, PaymentType } from "./entities";
+import { Order, OrderItem, PaymentType, PaymentOrder } from "./entities";
 import { Local } from "../users/entities";
 import { Product } from "../products/entities";
 
@@ -15,7 +15,8 @@ import { Product } from "../products/entities";
             OrderItem, 
             PaymentType, 
             Local,
-            Product
+            Product,
+            PaymentOrder
         ]),
         UserModule,
         ProductModule

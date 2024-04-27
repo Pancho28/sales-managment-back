@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { Order, OrderItem, PaymentType } from "./entities";
+import { Order, OrderItem, PaymentType, PaymentOrder } from "./entities";
 import { Local, User } from "../users/entities";
 import { ProductService } from "../products/product.service";
 import { Repository } from 'typeorm';
@@ -19,6 +19,8 @@ export class OrderService {
         private orderItemRepository: Repository<OrderItem>,
         @InjectRepository(PaymentType)
         private paymentTypeRepository: Repository<PaymentType>,
+        @InjectRepository(PaymentOrder)
+        private paymentOrderRepository: Repository<PaymentOrder>,
         @InjectRepository(Local)
         private localRepository: Repository<Local>
     )
@@ -74,11 +76,6 @@ export class OrderService {
     }
 
     async createorder(data: CreateOrderDto, user: User) : Promise<void> {
-        const paymentType = await this.paymentTypeRepository.findOneBy({ id: data.paymentTypeId });
-        if (!paymentType){
-            this.logger.error(`PaymentType with id ${data.paymentTypeId} not found`);
-            throw new NotFoundException(`PaymentType con id ${data.paymentTypeId} no encontrado`);
-        }
         const local = await this.localRepository.createQueryBuilder('local')
                                                     .where('local.id = :localId', { localId: data.localId })
                                                     .innerJoinAndSelect('local.user', 'user')
@@ -88,14 +85,21 @@ export class OrderService {
             throw new NotFoundException(`Local con id ${data.localId} no encontrado`);
         }
         if (user.id !== local.user.id && user.role !== 'ADMIN'){
-            this.logger.error(`User with id ${user.id} not have permission for local ${local.name}`);
-            throw new UnauthorizedException(`Usuario con id ${user.id} no tiene permiso para local ${local.name}`);
+            this.logger.error(`User with id ${user.username} not have permission for local ${local.name}`);
+            throw new UnauthorizedException(`Usuario con id ${user.username} no tiene permiso para local ${local.name}`);
 
+        }
+        let totalAmount = 0;
+        data.payments.forEach(payment => {
+            totalAmount += payment.amount;
+        });
+        if (totalAmount !== data.totalDl){
+            this.logger.error(`Total amount ${data.totalDl} not match with total amount of payments ${totalAmount}`);
+            throw new BadRequestException(`Monto total ${data.totalDl} no coincide con el monto total de los pagos ${totalAmount}`);
         }
         const newOrder = this.orderRepository.create({
             totalDl: data.totalDl,
             totalBs: data.totalBs,
-            paymentType: paymentType,
             local: local
         });
         await this.orderRepository.save(newOrder);
@@ -115,6 +119,21 @@ export class OrderService {
             });
             await this.orderItemRepository.save(newOrderItem);
             this.logger.log(`OrderItem created for product ${product.name} in local ${local.name}`);
+        }
+        const payments = await this.paymentTypeRepository.find();
+        for (const payment of data.payments){
+            const paymentType = payments.find(p => p.id === payment.paymentTypeId);
+            if (!paymentType){
+                this.logger.error(`PaymentType with id ${payment.paymentTypeId} not found`);
+                throw new NotFoundException(`Tipo de pago con id ${payment.paymentTypeId} no encontrado`);
+            }
+            const newPaymentOrder = this.paymentOrderRepository.create({
+                amount: payment.amount,
+                paymentType,
+                order: newOrder
+            });
+            await this.paymentOrderRepository.save(newPaymentOrder);
+            this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} in local ${local.name}`);
         }
     }
 
