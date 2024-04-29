@@ -36,17 +36,12 @@ export class OrderService {
         const orders = await this.orderRepository.createQueryBuilder('order')
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
                                                 .getMany();
-        if (!orders){
-            this.logger.error(`Orders not found`);
-            throw new NotFoundException(`Ordenes no encontradas`);
-        }
         return orders;
     }
 
     async getOrdersByLocal(localId: string) : Promise<Order[]> {
         const local = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.id = :localId', { localId })
-                                                .andWhere('local.status = :status', { status: 'ACTIVE' })
                                                 .getOne();
         if (!local){
             this.logger.error(`Local with id ${localId} not found`);
@@ -56,10 +51,6 @@ export class OrderService {
                                                 .where('order.localId = :localId', { localId })
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
                                                 .getMany();
-        if (!orders){
-            this.logger.error(`Orders not found for local with id ${localId}`);
-            throw new NotFoundException(`Ordenes no encontradas para local con id ${localId}`);
-        }
         return orders;
     }
 
@@ -104,7 +95,7 @@ export class OrderService {
         });
         await this.orderRepository.save(newOrder);
         this.logger.log(`Order with id ${newOrder.id} created for local ${local.name}`);
-        const products = await this.productService.getProducts(data.localId);
+        const products = await this.productService.getProducts(user);
         for (const item of data.items){
             const product = products.find(p => p.id === item.productId);
             if (!product){
@@ -139,19 +130,16 @@ export class OrderService {
 
     async getOrdersSummaryByPaymentType(localId: string) {
         const ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
-          .select("SUM(order.totalDl) AS totalDl", "totalDl")
-          .addSelect("SUM(order.totalBS) AS totalBS", "totalBS")
+          .select("SUM(order.totalDl)", "totalDl")
+          .addSelect("SUM(order.totalBS)", "totalBS")
           .addSelect("payment_type.name", "name")
           .addSelect("payment_type.currency", "currency")
-          .innerJoin("payment_type", "order.paymentTypeId = payment_type.id")
+          .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+          .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
           .where("order.localId = :localId", { localId })
           .groupBy("payment_type.name")
           .addGroupBy("payment_type.currency")
           .getRawMany();
-        if (ordersByPaymentType.length === 0){
-            this.logger.error(`Orders not found for local with id ${localId}`);
-            throw new NotFoundException(`Ordenes no encontradas para local con id ${localId}`);
-        }
         return ordersByPaymentType;
     }
 
@@ -160,7 +148,7 @@ export class OrderService {
             this.logger.error(`User with username ${user.username} not have permission to create paymentType`);
             throw new UnauthorizedException('Usuario no tiene permiso');
         }
-        const paymentTypeExist = await this.paymentTypeRepository.findOneBy({ name: data.name });
+        const paymentTypeExist = await this.paymentTypeRepository.findOneBy({ name: data.name, currency: data.currency});
         if (paymentTypeExist){
             this.logger.error(`PaymentType with name ${data.name} already exists`);
             throw new BadRequestException(`Tipo de pago con nombre ${data.name} ya existe`);
@@ -196,10 +184,6 @@ export class OrderService {
 
     async getPaymentTypes() : Promise<PaymentType[]> {
         const paymentTypes = await this.paymentTypeRepository.find();
-        if (!paymentTypes){
-            this.logger.error(`PaymentTypes not found`);
-            throw new NotFoundException(`Tipos de pago no encontrados`);
-        }
         return paymentTypes;
     }
 

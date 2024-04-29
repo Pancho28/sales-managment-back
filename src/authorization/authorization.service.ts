@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dtos/login.dto';
-import { compare, hash } from 'bcrypt';
+import { compare } from 'bcrypt';
 import { UserService } from '../users/user.service';
 import { User } from '../users/entities/user.entity';
 
@@ -28,13 +28,14 @@ export class AuthorizationService {
 
   async login( loginDto : LoginDto ) : Promise<any> { 
     const user: User = await this.userService.getUserByUsername(loginDto.username); 
-    const {id, username, role, status} = user;
+    const local = await this.userService.getLocalByUserId(user);
+    const {id, username, role} = user;
     const payload = { sub: id };
     const response = {
       id,
       username,
       role,
-      status,
+      local: local ? local.id : null,
       accessToken: this.jwtService.sign(payload)
     } 
     await this.userService.updateLastLogin(user);

@@ -6,8 +6,6 @@ export class LoginSerializer {
 
     role: string;
 
-    status: string;
-
     accessToken: string;
 
     constructor(partial: Partial<LoginSerializer>) {

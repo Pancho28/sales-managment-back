@@ -13,15 +13,15 @@ export class ProductController {
         private readonly productService: ProductService,
     ) {}
     
-    @Get('/:id')
+    @Get()
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getProducts(
-        @Param('id') localId: string
+        @GetUser() user: User 
     ): Promise<any> {
         let products: Product[];
 
-        products = await this.productService.getProducts(localId);
+        products = await this.productService.getProducts(user);
 
         return {
             statusCode: HttpStatus.OK,
@@ -29,16 +29,15 @@ export class ProductController {
         };
     }
 
-    @Post('/:id')
+    @Post()
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async createProduct(
-        @Param('id') localId: string,
         @Body() product: CreateProductDto
     ): Promise<any> {
         let newProduct: Product;
 
-        newProduct = await this.productService.createProduct(localId, product);
+        newProduct = await this.productService.createProduct(product);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -53,9 +52,8 @@ export class ProductController {
         @Param('id') localId: string,
         @Body() product: UpdateProductDto
     ): Promise<any> {
-        let newProduct: Product;
 
-        newProduct = await this.productService.updateProduct(localId, product);
+        await this.productService.updateProduct(localId, product);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -70,9 +68,8 @@ export class ProductController {
         @Param('productId') productId: string,
         @Param('localId') localId: string
     ): Promise<any> {
-        let newProduct: Product;
 
-        newProduct = await this.productService.activeProduct(localId,productId);
+        await this.productService.activeProduct(localId,productId);
 
         return {
             statusCode: HttpStatus.CREATED,
@@ -102,11 +99,10 @@ export class ProductController {
     @HttpCode(HttpStatus.CREATED)
     async createCategory(
         @Body() category: CategoryDto,
-        @GetUser() user: User
+        @GetUser() user: User 
     ): Promise<any> {
-        let newCategory: Category;
 
-        newCategory = await this.productService.createCategory(user,category);
+        await this.productService.createCategory(user,category);
 
         return {
             statusCode: HttpStatus.CREATED,

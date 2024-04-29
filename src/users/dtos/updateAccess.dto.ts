@@ -2,7 +2,7 @@ import { IsOptional, IsString, MaxLength } from "class-validator";
 
 export class UpdateAccessDto {
     
-    @MaxLength(20)
+    @MaxLength(50)
     @IsOptional()
     @IsString()
     name: string;

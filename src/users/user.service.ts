@@ -76,7 +76,7 @@ export class UserService implements OnModuleInit{
             this.logger.error(`User with username ${username} not exist`);
             throw new NotFoundException('Usuario no existe');
         }
-        if (user.status === 'INACTIVE'){
+        if (user.status === 'INACTIVE' && admin.role != 'ADMIN'){
             this.logger.error(`User with username ${username} is inactive`);
             throw new BadRequestException('Usuario inactivo');
         }
@@ -88,11 +88,18 @@ export class UserService implements OnModuleInit{
         const users = await this.userRepository.createQueryBuilder('user')
                                                 .where('user.role != :role', { role : 'ADMIN' })
                                                 .getMany();
-        if (!users){
-            this.logger.error('Users not found');
-            throw new NotFoundException('Usuarios no encontrados');
-        }
         return users;
+    }
+
+    async getLocalByUserId(user: User) : Promise<Local> {
+        const local = await this.localRepository.createQueryBuilder('local')
+                                                .where('local.user = :userId', { userId: user.id })
+                                                .getOne();
+        if (!local && user.role != 'ADMIN'){
+            this.logger.error(`Local not found for user with id ${user.id}`);
+            throw new NotFoundException(`Local no encontrado para usuario con id ${user.id}`);
+        }
+        return local;
     }
 
     async updateLastLogin(user: User) : Promise<void> {
@@ -127,6 +134,10 @@ export class UserService implements OnModuleInit{
     async activateUser(user: User, userId: string) : Promise<void> {
         this.validateAdmin(user);
         const activateUser = await this.getUserById(userId);
+        if (!activateUser){
+            this.logger.error(`User with id ${userId} not found`);
+            throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
+        }
         activateUser.status = 'ACTIVE';
         await this.userRepository.save(activateUser);
         this.logger.log(`User with username ${activateUser.username} activated`);
@@ -135,6 +146,10 @@ export class UserService implements OnModuleInit{
     async inactivateUser(user: User, userId: string) : Promise<void> {  
         this.validateAdmin(user);
         const inactivateUser = await this.getUserById(userId);  
+        if (!inactivateUser){
+            this.logger.error(`User with id ${userId} not found`);
+            throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
+        }
         if (inactivateUser.username === user.username){ 
             this.logger.error(`User with username ${inactivateUser.username} can't be inactivated`);
             throw new BadRequestException('No se puede desactivar este usuario');
@@ -190,7 +205,7 @@ export class UserService implements OnModuleInit{
             description: access.description
         });
         await this.accessRepository.save(newAccess);
-        this.logger.log(`Access with name ${newAccess.name}`);
+        this.logger.log(`Access with name ${newAccess.name} created`);
     }
 
     async updateAccess(user: User, accessId: string, access: UpdateAccessDto) : Promise<void> {
@@ -211,7 +226,7 @@ export class UserService implements OnModuleInit{
         accessExist.name ? accessExist.name = access.name : null;
         accessExist.description ? accessExist.description = access.description : null;
         await this.accessRepository.save(accessExist);
-        this.logger.log(`Access with id ${accessId} updated`);
+        this.logger.log(`Access ${accessExist.name} updated`);
     }
 
     async assignAccess(user: User, data: GrantUserAccessDto) : Promise<void> {
@@ -227,8 +242,8 @@ export class UserService implements OnModuleInit{
             throw new NotFoundException(`Acceso con id ${data.accessId} no encontrado`);
         }
         const userAccessExist = await this.userAccessRepository.createQueryBuilder('userAccess')
-                                                            .where('userAccess.userId', { userId: data.userId })
-                                                            .andWhere('userAccess.accessId', { accessId: data.accessId })
+                                                            .where('userAccess.userId = :userId', { userId: data.userId })
+                                                            .andWhere('userAccess.accessId = :accessId', { accessId: data.accessId })
                                                             .getOne();
         if (userAccessExist){
             this.logger.error(`User ${userExist.username} already have access ${accessExist.name}`);
@@ -256,8 +271,8 @@ export class UserService implements OnModuleInit{
             throw new NotFoundException(`Acceso con id ${data.accessId} no encontrado`);
         }
         const userAccessExist = await this.userAccessRepository.createQueryBuilder('userAccess')
-                                                            .where('userAccess.userId', { userId: data.userId })
-                                                            .andWhere('userAccess.accessId', { accessId: data.accessId })
+                                                            .where('userAccess.userId = :userId', { userId: data.userId })
+                                                            .andWhere('userAccess.accessId = :accessId', { accessId: data.accessId })
                                                             .getOne();
         if (!userAccessExist){
             this.logger.error(`User ${userExist.username} not have access ${accessExist.name}`);
@@ -280,8 +295,8 @@ export class UserService implements OnModuleInit{
             throw new NotFoundException(`Acceso con id ${data.accessId} no encontrado`);
         }
         const userAccessExist = await this.userAccessRepository.createQueryBuilder('userAccess')
-                                                            .where('userAccess.userId', { userId: data.userId })
-                                                            .andWhere('userAccess.accessId', { accessId: data.accessId })
+                                                            .where('userAccess.userId = :userId', { userId: data.userId })
+                                                            .andWhere('userAccess.accessId = :accessId', { accessId: data.accessId })
                                                             .getOne();
         if (!userAccessExist){
             this.logger.error(`User ${userExist.username} not have access ${accessExist.name}`);

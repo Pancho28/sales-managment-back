@@ -22,23 +22,29 @@ export class ProductService {
         this.logger = new Logger(ProductService.name);
     }
 
-    async getProducts(localId: string) : Promise<Product[]> {     
-        const products = await this.productRepository.createQueryBuilder('product')
-                                                    .where('product.localId = :localId', { localId })
-                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
-                                                    .getMany();
-        if(!products){
-            this.logger.error(`Products not found`);
-            throw new NotFoundException(`Productos no encontrados`);
+    async getProducts(user: User) : Promise<Product[]> { 
+        let products: Product[]; 
+        if (user.role != 'ADMIN'){  
+            const localId = await this.localRepository.createQueryBuilder('local')
+                                                .where('local.userId = :userId', { userId: user.id })
+                                                .getOne();
+            products = await this.productRepository.createQueryBuilder('product')
+                                                        .where('product.localId = :localId', { localId: localId.id })
+                                                        .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                        .getMany();
+        }
+        else {
+            products = await this.productRepository.find();
+            
         }
         return products;
     }
 
-    async createProduct(localId: string, product: CreateProductDto) : Promise<Product> {
-        const local = await this.localRepository.findOneBy({ id: localId });
+    async createProduct(product: CreateProductDto) : Promise<Product> {
+        const local = await this.localRepository.findOneBy({ id: product.localId });
         if (!local){
-            this.logger.error(`Local with id ${localId} not found`);
-            throw new NotFoundException(`Local con id ${localId} no encontrado`);
+            this.logger.error(`Local with id ${product.localId} not found`);
+            throw new NotFoundException(`Local con id ${product.localId} no encontrado`);
         }
         const category = await this.categoryRepository.findOneBy({ id: product.categoryId });
         if (!category){
@@ -134,10 +140,6 @@ export class ProductService {
 
     async getCategories() : Promise<Category[]> {
         const categories = await this.categoryRepository.find();
-        if (!categories){
-            this.logger.error(`Categories not found`);
-            throw new NotFoundException(`Categorias no encontradas`);
-        }
         return categories;
     }
 
@@ -173,18 +175,14 @@ export class ProductService {
 
     async getProductsSummaryByPrice(localId: string) {
         const productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")
-          .select("SUM(order_item.quantity) AS quantity", "quantity")
+          .select("SUM(order_item.quantity)", "quantity")
           .addSelect("order_item.price", "price")
           .addSelect("product.name", "name")
-          .innerJoin("order_item", "order_item.productId = product.id")
-          .where("p.localId = :localId", { localId })
+          .innerJoin("order_item","order_item", "order_item.productId = product.id")
+          .where("product.localId = :localId", { localId })
           .groupBy("order_item.price")
           .addGroupBy("product.name")
           .getRawMany();
-        if (!productsSummaryByPrice) {
-            this.logger.error(`Products not found`);
-            throw new NotFoundException(`Productos no encontrados`);
-        }
         return productsSummaryByPrice;
     }
 

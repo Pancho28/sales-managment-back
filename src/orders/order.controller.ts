@@ -2,7 +2,7 @@ import { Controller, Get, Post, UseGuards, HttpStatus, HttpCode, Put, Param, Bod
 import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { OrderService } from "./order.service";
-import { CreateOrderDto, CreatePaymentTypeDto } from "./dtos";
+import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
 import { User } from "../users/entities";
 import { Order } from "./entities";
 
@@ -102,7 +102,7 @@ export class OrderController {
     async updatePaymentType(
         @GetUser() user: User,
         @Param('id') paymentTypeId: string,
-        @Body() dto: CreatePaymentTypeDto
+        @Body() dto: UpdatePaymentTypeDto
     ): Promise<any> {
         await this.orderService.updatePaymentType(user, paymentTypeId, dto);
         return {
@@ -111,7 +111,7 @@ export class OrderController {
         };
     }
 
-    @Get('/paymentType')
+    @Get('/paymentType/all')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getPaymentTypes(): Promise<any> {
