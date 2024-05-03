@@ -24,8 +24,8 @@ export class UserAccess {
     @JoinColumn()
     access: Access;
   
-    @Column({ type: 'boolean' })
-    password: boolean;
+    @Column({type: 'varchar', nullable: true})
+    password: string;
   
     @CreateDateColumn({ type: 'datetime', readonly: true})
     creationDate: Date;
