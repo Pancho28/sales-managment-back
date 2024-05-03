@@ -18,11 +18,11 @@ export class AuthorizationController {
     @Body() loginDto: LoginDto,
   ) : Promise<any> {
 
-    const user = await this.authorizationService.login(loginDto);
-    const loginSerializer = new LoginSerializer(user);
+    const data = await this.authorizationService.login(loginDto);
+
     return {
       statusCode: HttpStatus.OK,
-      data:loginSerializer
+      data
     };
   }
 

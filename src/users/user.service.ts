@@ -93,6 +93,7 @@ export class UserService implements OnModuleInit{
 
     async getLocalByUserId(user: User) : Promise<Local> {
         const local = await this.localRepository.createQueryBuilder('local')
+                                                .select(['local.id', 'local.name', 'local.dolar'])
                                                 .where('local.user = :userId', { userId: user.id })
                                                 .getOne();
         if (!local && user.role != 'ADMIN'){
@@ -100,6 +101,15 @@ export class UserService implements OnModuleInit{
             throw new NotFoundException(`Local no encontrado para usuario con id ${user.id}`);
         }
         return local;
+    }
+
+    async getAccessByUserId(user: User) : Promise<Access[]> {
+        const access = await this.accessRepository.createQueryBuilder('access')
+                                                .select(['access.id', 'access.name', 'userAccess.password'])
+                                                .innerJoin('access.userAccess', 'userAccess')
+                                                .where('userAccess.userId = :userId', { userId: user.id })
+                                                .getMany();
+        return access;
     }
 
     async updateLastLogin(user: User) : Promise<void> {

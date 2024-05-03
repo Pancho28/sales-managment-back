@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsUUID } from "class-validator";
+import { IsString, IsNotEmpty, IsUUID, IsOptional } from "class-validator";
 
 export class GrantUserAccessDto {
         
@@ -10,8 +10,8 @@ export class GrantUserAccessDto {
     @IsUUID()
     accessId: string;
 
-    @IsNotEmpty()
-    @IsBoolean()
-    password: boolean;
+    @IsOptional()
+    @IsString()
+    password: string;
 
 }
