@@ -29,6 +29,7 @@ export class ProductService {
                                                 .where('local.userId = :userId', { userId: user.id })
                                                 .getOne();
             products = await this.productRepository.createQueryBuilder('product')
+                                                        .innerJoinAndSelect('product.category', 'category')
                                                         .where('product.localId = :localId', { localId: localId.id })
                                                         .andWhere('product.status = :status', { status: 'ACTIVE' })
                                                         .getMany();

@@ -41,7 +41,8 @@ export class ProductController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Product created successfully',
+            message: 'Producto creado exitosamente',
+            productId: newProduct.id
         };
     }
 
@@ -57,7 +58,7 @@ export class ProductController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Product updated successfully',
+            message: 'Producto actualizado exitosamente',
         };
     }
 
@@ -73,7 +74,7 @@ export class ProductController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Product activated successfully',
+            message: 'Producto activado exitosamente',
         };
     }
 
@@ -90,7 +91,7 @@ export class ProductController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Product inactivated successfully',
+            message: 'Producto desactivado exitosamente',
         };
     }
 
@@ -106,7 +107,7 @@ export class ProductController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Category created successfully',
+            message: 'Categoria creada exitosamente',
         };
     }
 
@@ -124,7 +125,7 @@ export class ProductController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Category updated successfully',
+            message: 'Categoria actualizada exitosamente',
         };
     }
 

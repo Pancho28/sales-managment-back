@@ -124,7 +124,7 @@ export class OrderService {
                 order: newOrder
             });
             await this.paymentOrderRepository.save(newPaymentOrder);
-            this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} in local ${local.name}`);
+            this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} ${paymentType.currency} in local ${local.name}`);
         }
     }
 
