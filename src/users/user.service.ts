@@ -50,8 +50,7 @@ export class UserService implements OnModuleInit{
 
     validateAdmin(user: User) : void {
         if (user.role != 'ADMIN'){
-            this.logger.error(`User with username ${user.username} not have permission`);
-            throw new UnauthorizedException('Usuario no tiene permiso');
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
     }
     
@@ -61,8 +60,7 @@ export class UserService implements OnModuleInit{
         }
         const user = await this.userRepository.findOneBy({id: userId});
         if (!user){
-            this.logger.error(`User with id ${userId} not exist`);
-            throw new NotFoundException('Usuario no existe');
+            throw new NotFoundException(`Usuario ${userId} no existe`);
         }
         return user;
     }
@@ -73,12 +71,10 @@ export class UserService implements OnModuleInit{
         }
         const user = await this.userRepository.findOneBy({username});
         if (!user){
-            this.logger.error(`User with username ${username} not exist`);
-            throw new NotFoundException('Usuario no existe');
+            throw new NotFoundException(`Usuario ${username} no existe`);
         }
         if (user.status === 'INACTIVE' && admin.role != 'ADMIN'){
-            this.logger.error(`User with username ${username} is inactive`);
-            throw new BadRequestException('Usuario inactivo');
+            throw new BadRequestException(`Usuario ${user.id} inactivo`);
         }
         return user;
     }
@@ -97,7 +93,6 @@ export class UserService implements OnModuleInit{
                                                 .where('local.user = :userId', { userId: user.id })
                                                 .getOne();
         if (!local && user.role != 'ADMIN'){
-            this.logger.error(`Local not found for user with id ${user.id}`);
             throw new NotFoundException(`Local no encontrado para usuario con id ${user.id}`);
         }
         return local;
@@ -121,8 +116,7 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user); 
         const userExist = await this.userRepository.findOneBy({ username: dto.username });
         if (userExist) {
-            this.logger.error(`User with username ${userExist.username} already exist`);
-            throw new BadRequestException('Usuario ya existe');
+            throw new BadRequestException(`Usuario ${user.id} ya existe`);
         };
         const newUser = this.userRepository.create({
             username: dto.username,
@@ -145,7 +139,6 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const activateUser = await this.getUserById(userId);
         if (!activateUser){
-            this.logger.error(`User with id ${userId} not found`);
             throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
         }
         activateUser.status = 'ACTIVE';
@@ -157,11 +150,9 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const inactivateUser = await this.getUserById(userId);  
         if (!inactivateUser){
-            this.logger.error(`User with id ${userId} not found`);
             throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
         }
         if (inactivateUser.username === user.username){ 
-            this.logger.error(`User with username ${inactivateUser.username} can't be inactivated`);
             throw new BadRequestException('No se puede desactivar este usuario');
         } 
         inactivateUser.status = 'INACTIVE';
@@ -173,7 +164,6 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const newPasswordUser = await this.getUserById(userId);
         if (!newPasswordUser){
-            this.logger.error(`User with id ${userId} not found`);
             throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
         }
         newPasswordUser.password = await  hash(newPassword, 10);
@@ -184,7 +174,6 @@ export class UserService implements OnModuleInit{
     async updateDolar(localId: string, dolar: number) {
         const local = await this.localRepository.findOneBy({ id: localId });
         if (!local){
-            this.logger.error(`Local with id ${localId} not found`);
             throw new NotFoundException(`Local con id ${localId} no encontrado`);
         }
         local.dolar = dolar;
@@ -195,7 +184,6 @@ export class UserService implements OnModuleInit{
     async updateLocalName(localId: string, name: string) {
         const local = await this.localRepository.findOneBy({ id: localId });
         if (!local){
-            this.logger.error(`Local with id ${localId} not found`);
             throw new NotFoundException(`Local con id ${localId} no encontrado`);
         }
         local.name = name;
@@ -207,7 +195,6 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const accessExist = await this.accessRepository.findOneBy({ name: access.name });
         if (accessExist){
-            this.logger.error(`Access with name ${accessExist.name} already exist`);
             throw new BadRequestException(`Acceso con nombre ${accessExist.name} ya existe`);
         }
         const newAccess = this.accessRepository.create({
@@ -221,16 +208,13 @@ export class UserService implements OnModuleInit{
     async updateAccess(user: User, accessId: string, access: UpdateAccessDto) : Promise<void> {
         this.validateAdmin(user);
         if (!access.name && !access.description){
-            this.logger.error(`Name or description is required to update access`);
             throw new BadRequestException('Nombre o descripción es requerido para actualizar acceso');
         }
         const accessExist = await this.accessRepository.findOneBy({ id: accessId });
         if (!accessExist){
-            this.logger.error(`Access with id ${accessId} not found`);
             throw new NotFoundException(`Acceso con id ${accessId} no encontrado`);
         }
         if (access.name == accessExist.name){
-            this.logger.error(`Access with name ${access.name} already exist`);
             throw new BadRequestException(`Acceso con nombre ${access.name} ya existe`);
         }
         accessExist.name ? accessExist.name = access.name : null;
@@ -243,12 +227,10 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const userExist = await this.getUserById(data.userId);
         if (!userExist){
-            this.logger.error(`User with id ${data.userId} not found`);
             throw new NotFoundException(`Usuario con id ${data.userId} no encontrado`);
         }
         const accessExist = await this.accessRepository.findOneBy({ id: data.accessId });
         if (!accessExist){
-            this.logger.error(`Access with id ${data.accessId} not found`);
             throw new NotFoundException(`Acceso con id ${data.accessId} no encontrado`);
         }
         const userAccessExist = await this.userAccessRepository.createQueryBuilder('userAccess')
@@ -256,7 +238,6 @@ export class UserService implements OnModuleInit{
                                                             .andWhere('userAccess.accessId = :accessId', { accessId: data.accessId })
                                                             .getOne();
         if (userAccessExist){
-            this.logger.error(`User ${userExist.username} already have access ${accessExist.name}`);
             throw new BadRequestException(`Usuario ${userExist.username} ya tiene acceso a ${accessExist.name}`);
         }
         const userAccess = this.userAccessRepository.create({
@@ -272,12 +253,10 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const userExist = await this.getUserById(data.userId);
         if (!userExist){
-            this.logger.error(`User with id ${data.userId} not found`);
             throw new NotFoundException(`Usuario con id ${data.userId} no encontrado`);
         }
         const accessExist = await this.accessRepository.findOneBy({ id: data.accessId });
         if (!accessExist){
-            this.logger.error(`Access with id ${data.accessId} not found`);
             throw new NotFoundException(`Acceso con id ${data.accessId} no encontrado`);
         }
         const userAccessExist = await this.userAccessRepository.createQueryBuilder('userAccess')
@@ -285,7 +264,6 @@ export class UserService implements OnModuleInit{
                                                             .andWhere('userAccess.accessId = :accessId', { accessId: data.accessId })
                                                             .getOne();
         if (!userAccessExist){
-            this.logger.error(`User ${userExist.username} not have access ${accessExist.name}`);
             throw new BadRequestException(`Usuario ${userExist.username} no tiene acceso a ${accessExist.name}`);
         }
         await this.userAccessRepository.remove(userAccessExist);
@@ -296,12 +274,10 @@ export class UserService implements OnModuleInit{
         this.validateAdmin(user);
         const userExist = await this.getUserById(data.userId);
         if (!userExist){
-            this.logger.error(`User with id ${data.userId} not found`);
             throw new NotFoundException(`Usuario con id ${data.userId} no encontrado`);
         }
         const accessExist = await this.accessRepository.findOneBy({ id: data.accessId });
         if (!accessExist){
-            this.logger.error(`Access with id ${data.accessId} not found`);
             throw new NotFoundException(`Acceso con id ${data.accessId} no encontrado`);
         }
         const userAccessExist = await this.userAccessRepository.createQueryBuilder('userAccess')
@@ -309,11 +285,9 @@ export class UserService implements OnModuleInit{
                                                             .andWhere('userAccess.accessId = :accessId', { accessId: data.accessId })
                                                             .getOne();
         if (!userAccessExist){
-            this.logger.error(`User ${userExist.username} not have access ${accessExist.name}`);
             throw new BadRequestException(`Usuario ${userExist.username} no tiene acceso a ${accessExist.name}`);
         }
         if (userAccessExist.password == data.password){
-            this.logger.error(`Password access ${accessExist.name} already is ${data.password}`);
             throw new BadRequestException(`Clase de acceso ${accessExist.name} ya es ${data.password}`);
         }
         userAccessExist.password = data.password;

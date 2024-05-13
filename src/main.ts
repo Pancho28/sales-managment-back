@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { AllExceptionFilter } from "./exception-filters/all-exception.filter";
 
 async function bootstrap() {
   const logger = new Logger('NestApplication');
@@ -14,6 +15,8 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  app.useGlobalFilters(new AllExceptionFilter());
 
   app.enableCors({
     /*origin: [ activar luego

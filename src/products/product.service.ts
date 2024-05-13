@@ -44,17 +44,14 @@ export class ProductService {
     async createProduct(product: CreateProductDto) : Promise<Product> {
         const local = await this.localRepository.findOneBy({ id: product.localId });
         if (!local){
-            this.logger.error(`Local with id ${product.localId} not found`);
             throw new NotFoundException(`Local con id ${product.localId} no encontrado`);
         }
         const category = await this.categoryRepository.findOneBy({ id: product.categoryId });
         if (!category){
-            this.logger.error(`Category with id ${product.categoryId} not found`);
             throw new NotFoundException(`Categorria con id ${product.categoryId} no encontrada`);
         }
         const productExist = await this.productRepository.findOneBy({ name: product.name, local });
         if (productExist){
-            this.logger.error(`Product with name ${product.name} already exists`);
             throw new BadRequestException(`Producto con nombre ${product.name} ya existe`);
         }
         const newProduct = this.productRepository.create({
@@ -71,7 +68,6 @@ export class ProductService {
 
     async updateProduct(localId: string, productDto: UpdateProductDto) : Promise<Product> {
         if (!productDto.name && !productDto.price && !productDto.categoryId){
-            this.logger.error(`Product name, price and category can't be null`);
             throw new BadRequestException('Nombre, precio y categoria no pueden ser nulos');
         }
         const product = await this.productRepository.createQueryBuilder('product')
@@ -79,13 +75,11 @@ export class ProductService {
                                                     .andWhere('product.localId = :localId', { localId })
                                                     .getOne();
         if (!product){
-            this.logger.error(`Product with id ${productDto.productId} not found`);
             throw new NotFoundException(`Producto con id ${productDto.productId} no encontrado`);
         }
         if (productDto.categoryId){
             const category = await this.categoryRepository.findOneBy({ id: productDto.categoryId });
             if (!category){
-                this.logger.error(`Category with id ${productDto.categoryId} not found`);
                 throw new NotFoundException(`Categorria con id ${productDto.categoryId} no encontrada`);
             }
             productDto.categoryId ? product.category = category : null;
@@ -100,12 +94,10 @@ export class ProductService {
 
     async createCategory(user: User, category: CategoryDto) : Promise<Category> {
         if (user.role != 'ADMIN'){
-            this.logger.error(`User with username ${user.username} not have permission to create category`);
-            throw new UnauthorizedException('Usuario no tiene permiso');
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const categoryExist = await this.categoryRepository.findOneBy({ name: category.name });
         if (categoryExist){
-            this.logger.error(`Category with name ${category.name} already exists`);
             throw new BadRequestException(`Categoria con nombre ${category.name} ya existe`);
         }
         const newCategory = this.categoryRepository.create({
@@ -119,17 +111,14 @@ export class ProductService {
 
     async updateCategory(user: User, categoryDto: CategoryDto, categoryId: string) : Promise<Category> {
         if (user.role != 'ADMIN'){
-            this.logger.error(`User with username ${user.username} not have permission to update category`);
-            throw new UnauthorizedException('Usuario no tiene permiso');
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const category = await this.categoryRepository.findOneBy({ id: categoryId });
         if (!category){
-            this.logger.error(`Category with id ${categoryId} not found`);
             throw new NotFoundException(`Categoria con id ${categoryId} no encontrada`);
         }
         const categoryExist = await this.categoryRepository.findOneBy({ name: categoryDto.name });
         if (categoryExist){
-            this.logger.error(`Category with name ${categoryExist.name} already exists`);
             throw new BadRequestException(`Categoria con nombre ${categoryExist.name} ya existe`);
         }
         category.name = categoryDto.name;
@@ -150,7 +139,6 @@ export class ProductService {
                                                     .andWhere('product.localId = :localId', { localId })
                                                     .getOne();;
         if (!product){
-            this.logger.error(`Product with id ${productId} not found`);
             throw new NotFoundException(`Producto con id ${productId} no encontrado`);
         }
         product.status = 'ACTIVE';
@@ -165,7 +153,6 @@ export class ProductService {
                                                     .andWhere('product.localId = :localId', { localId })
                                                     .getOne();;
         if (!product){
-            this.logger.error(`Product with id ${productId} not found`);
             throw new NotFoundException(`Producto con id ${productId} no encontrado`);
         }
         product.status = 'INACTIVE';
@@ -180,7 +167,9 @@ export class ProductService {
           .addSelect("order_item.price", "price")
           .addSelect("product.name", "name")
           .innerJoin("order_item","order_item", "order_item.productId = product.id")
+          .innerJoin("order","order", "order.id = order_item.orderId")
           .where("product.localId = :localId", { localId })
+          .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
           .groupBy("order_item.price")
           .addGroupBy("product.name")
           .getRawMany();
