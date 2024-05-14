@@ -10,12 +10,12 @@ export class AllExceptionFilter implements ExceptionFilter {
       const ctx = host.switchToHttp();
       const response = ctx.getResponse();
       const request = ctx.getRequest();
+      const status = exception.getStatus();
   
       // Log the error details for debugging
-      this.logger.error(`Http status: ${response.statusCode || HttpStatus.INTERNAL_SERVER_ERROR} Error: ${exception.message} Method: ${request.method} Path: ${request.url}`);
+      this.logger.error(`Http status: ${status || HttpStatus.INTERNAL_SERVER_ERROR} Error: ${exception.message} Method: ${request.method} Path: ${request.url}`);
       // Handle HTTP exceptions (maintain original behavior)
       if (exception instanceof HttpException) {
-        const status = exception.getStatus();
         response.status(status).json({
           statusCode: status,
           path: request.url,
