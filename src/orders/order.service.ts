@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { Order, OrderItem, PaymentType, PaymentOrder } from "./entities";
 import { Local, User } from "../users/entities";
 import { ProductService } from "../products/product.service";
@@ -28,10 +28,9 @@ export class OrderService {
         this.logger = new Logger(OrderService.name);
     }
 
-    async getOrders(user : User) : Promise<Order[]> {
+    async getOrders(user : User) : Promise<Order[]> {  
         if (user.role != 'ADMIN'){
-            this.logger.error(`User with username ${user.username} not have permission to create paymentType`);
-            throw new UnauthorizedException('Usuario no tiene permiso');
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const orders = await this.orderRepository.createQueryBuilder('order')
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
@@ -44,7 +43,6 @@ export class OrderService {
                                                 .where('local.id = :localId', { localId })
                                                 .getOne();
         if (!local){
-            this.logger.error(`Local with id ${localId} not found`);
             throw new NotFoundException(`Local con id ${localId} no encontrado`);
         }
         const orders = await this.orderRepository.createQueryBuilder('order')
@@ -60,7 +58,6 @@ export class OrderService {
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
                                                 .getOne();
         if (!order){
-            this.logger.error(`Order with id ${id} not found`);
             throw new NotFoundException(`Orden con id ${id} no encontrada`);
         }
         return order;
@@ -72,11 +69,9 @@ export class OrderService {
                                                     .innerJoinAndSelect('local.user', 'user')
                                                     .getOne();
         if (!local){
-            this.logger.error(`Local with id ${data.localId} not found`);
             throw new NotFoundException(`Local con id ${data.localId} no encontrado`);
         }
         if (user.id !== local.user.id && user.role !== 'ADMIN'){
-            this.logger.error(`User with id ${user.username} not have permission for local ${local.name}`);
             throw new UnauthorizedException(`Usuario con id ${user.username} no tiene permiso para local ${local.name}`);
 
         }
@@ -85,7 +80,6 @@ export class OrderService {
             totalAmount += payment.amount;
         });
         if (totalAmount !== data.totalDl){
-            this.logger.error(`Total amount ${data.totalDl} not match with total amount of payments ${totalAmount}`);
             throw new BadRequestException(`Monto total ${data.totalDl} no coincide con el monto total de los pagos ${totalAmount}`);
         }
         const newOrder = this.orderRepository.create({
@@ -99,7 +93,6 @@ export class OrderService {
         for (const item of data.items){
             const product = products.find(p => p.id === item.productId);
             if (!product){
-                this.logger.error(`Product with id ${item.productId} not found`);
                 throw new NotFoundException(`Producto con id ${item.productId} no encontrado`);
             }
             const newOrderItem = this.orderItemRepository.create({
@@ -115,7 +108,6 @@ export class OrderService {
         for (const payment of data.payments){
             const paymentType = payments.find(p => p.id === payment.paymentTypeId);
             if (!paymentType){
-                this.logger.error(`PaymentType with id ${payment.paymentTypeId} not found`);
                 throw new NotFoundException(`Tipo de pago con id ${payment.paymentTypeId} no encontrado`);
             }
             const newPaymentOrder = this.paymentOrderRepository.create({
@@ -124,33 +116,49 @@ export class OrderService {
                 order: newOrder
             });
             await this.paymentOrderRepository.save(newPaymentOrder);
-            this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} in local ${local.name}`);
+            this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} ${paymentType.currency} in local ${local.name}`);
         }
     }
 
     async getOrdersSummaryByPaymentType(localId: string) {
-        const ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
-          .select("SUM(order.totalDl)", "totalDl")
-          .addSelect("SUM(order.totalBS)", "totalBS")
-          .addSelect("payment_type.name", "name")
-          .addSelect("payment_type.currency", "currency")
-          .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
-          .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
-          .where("order.localId = :localId", { localId })
-          .groupBy("payment_type.name")
-          .addGroupBy("payment_type.currency")
-          .getRawMany();
+        const now = new Date();
+        const hours = now.getHours();
+        let ordersByPaymentType : any;
+        if (hours >= 0 && hours <= 6){
+            ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
+                                        .select("SUM(payment_order.amount)", "total")
+                                        .addSelect("payment_type.name", "name")
+                                        .addSelect("payment_type.currency", "currency")
+                                        .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+                                        .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
+                                        .where("order.localId = :localId", { localId })
+                                        .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                        .groupBy("payment_type.name")
+                                        .addGroupBy("payment_type.currency")
+                                        .getRawMany();
+        }
+        else {
+            ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
+                                        .select("SUM(payment_order.amount)", "total")
+                                        .addSelect("payment_type.name", "name")
+                                        .addSelect("payment_type.currency", "currency")
+                                        .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+                                        .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
+                                        .where("order.localId = :localId", { localId })
+                                        .andWhere("date(order.creationdate) = current_date()")
+                                        .groupBy("payment_type.name")
+                                        .addGroupBy("payment_type.currency")
+                                        .getRawMany();
+        }
         return ordersByPaymentType;
     }
 
     async createPaymentType(user: User, data: CreatePaymentTypeDto) : Promise<PaymentType> {
         if (user.role != 'ADMIN'){
-            this.logger.error(`User with username ${user.username} not have permission to create paymentType`);
-            throw new UnauthorizedException('Usuario no tiene permiso');
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const paymentTypeExist = await this.paymentTypeRepository.findOneBy({ name: data.name, currency: data.currency});
         if (paymentTypeExist){
-            this.logger.error(`PaymentType with name ${data.name} already exists`);
             throw new BadRequestException(`Tipo de pago con nombre ${data.name} ya existe`);
         }
         const newPaymentType = this.paymentTypeRepository.create({
@@ -164,16 +172,13 @@ export class OrderService {
 
     async updatePaymentType(user: User, id: string, data: UpdatePaymentTypeDto) : Promise<void> {
         if (!data.name && !data.currency){
-            this.logger.error(`Name or currency is required to update paymentType`);
             throw new BadRequestException('Nombre o moneda es requerido para actualizar tipo de pago');
         }
         if (user.role != 'ADMIN'){
-            this.logger.error(`User with username ${user.username} not have permission to update paymentType`);
-            throw new UnauthorizedException('Usuario no tiene permiso');
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const paymentType = await this.paymentTypeRepository.findOneBy({ id });
         if (!paymentType){
-            this.logger.error(`PaymentType with id ${id} not found`);
             throw new NotFoundException(`Tipo de pago con id ${id} no encontrado`);
         }
         paymentType.name ? paymentType.name = data.name : null;

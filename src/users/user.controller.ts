@@ -77,7 +77,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'User created successfully'
+            message: 'Usuario creado exitosamente'
         };
     }
 
@@ -93,7 +93,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'User activated successfully'
+            message: 'Usuario activado exitosamente'
         };
     }
 
@@ -109,7 +109,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'User inactivated successfully'
+            message: 'Usuario desactivado exitosamente'
         };
     }
 
@@ -126,7 +126,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Password changed successfully'
+            message: 'Contraseña cambiada exitosamente'
         };
     }
 
@@ -142,7 +142,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Dolar updated successfully'
+            message: 'Dolar actualizado exitosamente'
         };
     }
 
@@ -158,7 +158,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Local name updated successfully'
+            message: 'Nombre del local actualizado exitosamente'
         };
     }
 
@@ -174,7 +174,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Access created'
+            message: 'Acceso creado'
         };
     }
 
@@ -191,7 +191,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Access updated'
+            message: 'Acceso actualizado'
         };
     }
 
@@ -207,7 +207,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Access assigned'
+            message: 'Acceso asignado'
         };
     }
 
@@ -223,7 +223,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.OK,
-            message: 'Access removed'
+            message: 'Acceso removido'
         };
     }
 
@@ -239,7 +239,7 @@ export class UserController {
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Password changed'
+            message: 'Contraseña cambiada exitosamente'
         };
     }
 

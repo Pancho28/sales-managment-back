@@ -65,7 +65,7 @@ export class OrderController {
         await this.orderService.createorder(dto, user);
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Order created'
+            message: 'Orden creada'
         };
     }
 
@@ -92,7 +92,7 @@ export class OrderController {
         await this.orderService.createPaymentType(user,dto);
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'PaymentType created'
+            message: 'Tipo de pago creado'
         };
     }
 
@@ -107,7 +107,7 @@ export class OrderController {
         await this.orderService.updatePaymentType(user, paymentTypeId, dto);
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'PaymentType updated'
+            message: 'Tipo de pago actualizado'
         };
     }
 
