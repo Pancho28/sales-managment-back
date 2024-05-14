@@ -121,17 +121,35 @@ export class OrderService {
     }
 
     async getOrdersSummaryByPaymentType(localId: string) {
-        const ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
-          .select("SUM(payment_order.amount)", "total")
-          .addSelect("payment_type.name", "name")
-          .addSelect("payment_type.currency", "currency")
-          .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
-          .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
-          .where("order.localId = :localId", { localId })
-          .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
-          .groupBy("payment_type.name")
-          .addGroupBy("payment_type.currency")
-          .getRawMany();
+        const now = new Date();
+        const hours = now.getHours();
+        let ordersByPaymentType : any;
+        if (hours >= 0 && hours <= 6){
+            ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
+                                        .select("SUM(payment_order.amount)", "total")
+                                        .addSelect("payment_type.name", "name")
+                                        .addSelect("payment_type.currency", "currency")
+                                        .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+                                        .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
+                                        .where("order.localId = :localId", { localId })
+                                        .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                        .groupBy("payment_type.name")
+                                        .addGroupBy("payment_type.currency")
+                                        .getRawMany();
+        }
+        else {
+            ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
+                                        .select("SUM(payment_order.amount)", "total")
+                                        .addSelect("payment_type.name", "name")
+                                        .addSelect("payment_type.currency", "currency")
+                                        .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+                                        .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
+                                        .where("order.localId = :localId", { localId })
+                                        .andWhere("date(order.creationdate) = current_date()")
+                                        .groupBy("payment_type.name")
+                                        .addGroupBy("payment_type.currency")
+                                        .getRawMany();
+        }
         return ordersByPaymentType;
     }
 

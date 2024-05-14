@@ -162,17 +162,34 @@ export class ProductService {
     }
 
     async getProductsSummaryByPrice(localId: string) {
-        const productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")
-          .select("SUM(order_item.quantity)", "quantity")
-          .addSelect("order_item.price", "price")
-          .addSelect("product.name", "name")
-          .innerJoin("order_item","order_item", "order_item.productId = product.id")
-          .innerJoin("order","order", "order.id = order_item.orderId")
-          .where("product.localId = :localId", { localId })
-          .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
-          .groupBy("order_item.price")
-          .addGroupBy("product.name")
-          .getRawMany();
+        const now = new Date();
+        const hours = now.getHours();
+        let productsSummaryByPrice : any;
+        if (hours >= 0 && hours <= 6){
+            productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")
+                                    .select("SUM(order_item.quantity)", "quantity")
+                                    .addSelect("order_item.price", "price")
+                                    .addSelect("product.name", "name")
+                                    .innerJoin("order_item","order_item", "order_item.productId = product.id")
+                                    .innerJoin("order","order", "order.id = order_item.orderId")
+                                    .where("product.localId = :localId", { localId })
+                                    .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                    .groupBy("order_item.price")
+                                    .addGroupBy("product.name")
+                                    .getRawMany();
+        }else {   
+            productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")
+                                    .select("SUM(order_item.quantity)", "quantity")
+                                    .addSelect("order_item.price", "price")
+                                    .addSelect("product.name", "name")
+                                    .innerJoin("order_item","order_item", "order_item.productId = product.id")
+                                    .innerJoin("order","order", "order.id = order_item.orderId")
+                                    .where("product.localId = :localId", { localId })
+                                    .andWhere("date(order.creationdate) = current_date()")
+                                    .groupBy("order_item.price")
+                                    .addGroupBy("product.name")
+                                    .getRawMany();
+        }
         return productsSummaryByPrice;
     }
 
