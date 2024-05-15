@@ -19,9 +19,9 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionFilter());
 
   app.enableCors({
-    origin: [
+    /*origin: [
     `${process.env.FRONTEND_HOST}`
-    ] 
+    ] */
   })
 
   await app.listen(port, '0.0.0.0', () => {
