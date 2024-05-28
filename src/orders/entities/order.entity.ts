@@ -26,6 +26,9 @@ export class Order {
     @CreateDateColumn({ type: 'timestamp', readonly: true})
     creationDate: Date;
 
+    @Column({type:'boolean', default: false})
+    delivered: boolean;
+
     @ManyToOne(type => Local, local => local.id , {onDelete: 'CASCADE'})
     @JoinColumn()
     local: Local;

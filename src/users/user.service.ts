@@ -5,6 +5,7 @@ import { CreateUserLocalDto, CreateAccessDto, UpdateAccessDto, GrantUserAccessDt
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { hash } from 'bcryptjs';
+import { Roles } from "../helpers/enum";
 
 @Injectable()
 export class UserService implements OnModuleInit{
@@ -49,7 +50,7 @@ export class UserService implements OnModuleInit{
     }
 
     validateAdmin(user: User) : void {
-        if (user.role != 'ADMIN'){
+        if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
     }
@@ -73,7 +74,7 @@ export class UserService implements OnModuleInit{
         if (!user){
             throw new NotFoundException(`Usuario ${username} no existe`);
         }
-        if (user.status === 'INACTIVE' && admin.role != 'ADMIN'){
+        if (user.status === 'INACTIVE' && admin.role != Roles.ADMIN){
             throw new BadRequestException(`Usuario ${user.id} inactivo`);
         }
         return user;
@@ -82,7 +83,7 @@ export class UserService implements OnModuleInit{
     async getUsers(user: User) : Promise<User[]> {     
         this.validateAdmin(user);
         const users = await this.userRepository.createQueryBuilder('user')
-                                                .where('user.role != :role', { role : 'ADMIN' })
+                                                .where('user.role != :role', { role : Roles.ADMIN })
                                                 .getMany();
         return users;
     }
@@ -92,7 +93,7 @@ export class UserService implements OnModuleInit{
                                                 .select(['local.id', 'local.name', 'local.dolar'])
                                                 .where('local.user = :userId', { userId: user.id })
                                                 .getOne();
-        if (!local && user.role != 'ADMIN'){
+        if (!local && user.role != Roles.ADMIN){
             throw new NotFoundException(`Local no encontrado para usuario con id ${user.id}`);
         }
         return local;

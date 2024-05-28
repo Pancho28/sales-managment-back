@@ -1,10 +1,11 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { Order, OrderItem, PaymentType, PaymentOrder } from "./entities";
 import { Local, User } from "../users/entities";
 import { ProductService } from "../products/product.service";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
+import { Roles } from "../helpers/enum";
 
 @Injectable()
 export class OrderService {
@@ -29,12 +30,16 @@ export class OrderService {
     }
 
     async getOrders(user : User) : Promise<Order[]> {  
-        if (user.role != 'ADMIN'){
+        let orders:any;
+        if (user.role = Roles.ADMIN){
+            orders = await this.orderRepository.createQueryBuilder('order')
+                                                    .innerJoinAndSelect('order.orderItem', 'orderItem')
+                                                    .innerJoinAndSelect('orderItem.product','product')
+                                                    .orderBy('order.creationDate','DESC')
+                                                    .getMany();
+        }else {
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
-        const orders = await this.orderRepository.createQueryBuilder('order')
-                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
-                                                .getMany();
         return orders;
     }
 
@@ -48,6 +53,8 @@ export class OrderService {
         const orders = await this.orderRepository.createQueryBuilder('order')
                                                 .where('order.localId = :localId', { localId })
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
+                                                .innerJoinAndSelect('orderItem.product','product')
+                                                .orderBy('order.creationDate','DESC')
                                                 .getMany();
         return orders;
     }
@@ -56,6 +63,7 @@ export class OrderService {
         const order = await this.orderRepository.createQueryBuilder('order')
                                                 .where('order.id = :id', { id })
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
+                                                .innerJoinAndSelect('orderItem.product','product')
                                                 .getOne();
         if (!order){
             throw new NotFoundException(`Orden con id ${id} no encontrada`);
@@ -71,7 +79,7 @@ export class OrderService {
         if (!local){
             throw new NotFoundException(`Local con id ${data.localId} no encontrado`);
         }
-        if (user.id !== local.user.id && user.role !== 'ADMIN'){
+        if (user.id !== local.user.id && user.role !== Roles.ADMIN){
             throw new UnauthorizedException(`Usuario con id ${user.username} no tiene permiso para local ${local.name}`);
 
         }
@@ -154,7 +162,7 @@ export class OrderService {
     }
 
     async createPaymentType(user: User, data: CreatePaymentTypeDto) : Promise<PaymentType> {
-        if (user.role != 'ADMIN'){
+        if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const paymentTypeExist = await this.paymentTypeRepository.findOneBy({ name: data.name, currency: data.currency});
@@ -174,7 +182,7 @@ export class OrderService {
         if (!data.name && !data.currency){
             throw new BadRequestException('Nombre o moneda es requerido para actualizar tipo de pago');
         }
-        if (user.role != 'ADMIN'){
+        if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const paymentType = await this.paymentTypeRepository.findOneBy({ id });
@@ -190,6 +198,60 @@ export class OrderService {
     async getPaymentTypes() : Promise<PaymentType[]> {
         const paymentTypes = await this.paymentTypeRepository.find();
         return paymentTypes;
+    }
+
+    async getOrdersNotDelivered(user: User) : Promise<Order[]> {
+        let orders : any;
+        if (user.role === Roles.ADMIN){
+            orders = await this.orderRepository.createQueryBuilder('order')
+                                                .where('order.delivered = false')
+                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+                                                .innerJoinAndSelect('orderItem.product','product')
+                                                .orderBy('order.creationDate','ASC')
+                                                .getMany();
+        } else if (user.role === Roles.SELLER) {
+            const local = await this.localRepository.createQueryBuilder('local')
+                                                    .where('local.userId = :userId', { userId: user.id })
+                                                    .getOne();  
+            if (!local){
+                throw new NotFoundException(`Local para usuario ${user.username} no encontrado`);
+            }
+            orders = await this.orderRepository.createQueryBuilder('order')
+                                                .where('order.delivered = false')
+                                                .andWhere('order.localId = :localId', { localId: local.id })
+                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+                                                .innerJoinAndSelect('orderItem.product','product')
+                                                .orderBy('order.creationDate','ASC')
+                                                .getMany();
+        }else {
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
+        }
+        return orders;
+    }
+
+    async orderDelivered(user: User, orderId: string) : Promise<void> {
+        if (user.role != Roles.SELLER && user.role != Roles.ADMIN){
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
+        }
+        const order = await this.orderRepository.createQueryBuilder('order')
+                                                .where('order.id = :orderId', { orderId })
+                                                .innerJoinAndSelect('order.local', 'local')
+                                                .getOne();
+        if (!order){
+            throw new NotFoundException(`Orden con id ${orderId} no encontrada`);
+        }
+        if (user.role === Roles.SELLER){
+            const local = await this.localRepository.createQueryBuilder('local')
+                                                    .innerJoinAndSelect('local.user', 'user')
+                                                    .where('local.userId = :userId', { userId: user.id })
+                                                    .getOne();
+            if (local.user.id !== user.id){
+                throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso para marcar orden como entregada`);
+            }
+        }
+        order.delivered = true;
+        await this.orderRepository.save(order);
+        this.logger.log(`Order with id ${order.id} delivered`);
     }
 
 }

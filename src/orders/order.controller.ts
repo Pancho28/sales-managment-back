@@ -122,4 +122,31 @@ export class OrderController {
         };
     }
 
+    @Get('/notdelivered/all')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getNotDeliveredOrders(
+        @GetUser() user: User
+    ): Promise<any> {
+        const orders = await this.orderService.getOrdersNotDelivered(user);
+        return {
+            statusCode: HttpStatus.OK,
+            orders
+        };
+    }
+
+    @Post('/notdelivered/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async orderDelivered(
+        @GetUser() user: User,
+        @Param('id') orderId: string
+    ): Promise<any> {
+        await this.orderService.orderDelivered(user,orderId);
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Orden entregada'
+        };
+    }
+
 }
