@@ -61,7 +61,6 @@ export class ProductService {
         const newProduct = this.productRepository.create({
             name: product.name,
             price: product.price,
-            updateDate: null,
             category,
             local
         });
@@ -105,8 +104,7 @@ export class ProductService {
             throw new BadRequestException(`Categoria con nombre ${category.name} ya existe`);
         }
         const newCategory = this.categoryRepository.create({
-            name: category.name,
-            updateDate: null
+            name: category.name
         });
         await this.categoryRepository.save(newCategory);
         this.logger.log(`Category with name ${category.name} created`);

@@ -7,7 +7,4 @@ export class CategoryDto {
     @IsString()
     name: string;
 
-    @IsEmpty()
-    updateDate: Date; 
-
 }

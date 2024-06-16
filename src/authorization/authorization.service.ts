@@ -46,7 +46,7 @@ export class AuthorizationService {
       access: accesUser,
       accessToken: this.jwtService.sign(payload)
     } 
-    await this.userService.updateLastLogin(user);
+    this.userService.updateLastLogin(user);
     this.logger.log(`Login attempt with username: ${loginDto.username}`);
     return response;
   }

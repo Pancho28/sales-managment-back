@@ -41,8 +41,7 @@ export class UserService implements OnModuleInit{
                 username,
                 password,
                 status,
-                role,
-                lastLogin: null
+                role 
             });
             await this.userRepository.save(superUser);
             this.logger.log(`Creating default user with username ${username}`);
@@ -121,8 +120,7 @@ export class UserService implements OnModuleInit{
         };
         const newUser = this.userRepository.create({
             username: dto.username,
-            password: dto.password,
-            lastLogin: null
+            password: dto.password
         });
         await this.userRepository.save(newUser);
         this.logger.log(`User with username ${newUser.username} created`);

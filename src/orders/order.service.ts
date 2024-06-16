@@ -249,7 +249,7 @@ export class OrderService {
                 throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso para marcar orden como entregada`);
             }
         }
-        order.delivered = true;
+        order.deliveredDate = new Date();
         await this.orderRepository.save(order);
         this.logger.log(`Order with id ${order.id} delivered`);
     }

@@ -34,7 +34,7 @@ export class User {
   @CreateDateColumn({ type: 'datetime', readonly: true})
   creationDate: Date;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: true})
+  @Column({ type: 'timestamp', nullable: true, default: null})
   lastLogin: Date;
 
   @OneToMany(() => UserAccess, userAccess => userAccess.user)

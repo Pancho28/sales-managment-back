@@ -30,7 +30,7 @@ export class Product {
     @CreateDateColumn({ type: 'datetime', readonly: true})
     creationDate: Date;
 
-    @CreateDateColumn({ type: 'datetime', nullable: true})
+    @Column({ type: 'datetime', nullable: true, default: null})
     updateDate: Date;
 
     @OneToMany(() => OrderItem, orderItem => orderItem.product)

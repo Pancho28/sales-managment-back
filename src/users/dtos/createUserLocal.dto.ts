@@ -11,9 +11,6 @@ export class CreateUserLocalDto {
     @IsNotEmpty()
     @IsString()
     password: string;
-
-    @IsEmpty()
-    lastLogin: Date; 
     
     @MaxLength(50)
     @IsNotEmpty()

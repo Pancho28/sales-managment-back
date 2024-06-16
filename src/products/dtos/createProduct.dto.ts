@@ -12,9 +12,6 @@ export class CreateProductDto {
     @IsPositive()
     price: number;
 
-    @IsEmpty()
-    updateDate: Date; 
-
     @IsNotEmpty()
     @IsUUID()
     categoryId: string;
