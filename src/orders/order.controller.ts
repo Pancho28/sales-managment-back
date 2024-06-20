@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { OrderService } from "./order.service";
 import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
+import { DateDto } from "../helpers/date.dto";
 import { User } from "../users/entities";
 import { Order } from "./entities";
 
@@ -62,10 +63,11 @@ export class OrderController {
         @GetUser() user: User,
         @Body() dto: CreateOrderDto
     ): Promise<any> {
-        await this.orderService.createorder(dto, user);
+        const newOrder = await this.orderService.createorder(dto, user);
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Orden creada'
+            message: 'Orden creada',
+            order: newOrder
         };
     }
 
@@ -140,9 +142,10 @@ export class OrderController {
     @HttpCode(HttpStatus.CREATED)
     async orderDelivered(
         @GetUser() user: User,
-        @Param('id') orderId: string
+        @Param('id') orderId: string,
+        @Body() dto: DateDto
     ): Promise<any> {
-        await this.orderService.orderDelivered(user,orderId);
+        await this.orderService.orderDelivered(user,orderId,dto);
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Orden entregada'

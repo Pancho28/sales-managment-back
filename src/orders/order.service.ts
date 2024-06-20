@@ -5,6 +5,7 @@ import { ProductService } from "../products/product.service";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
+import { DateDto } from "../helpers/date.dto";
 import { Roles } from "../helpers/enum";
 
 @Injectable()
@@ -71,7 +72,7 @@ export class OrderService {
         return order;
     }
 
-    async createorder(data: CreateOrderDto, user: User) : Promise<void> {
+    async createorder(data: CreateOrderDto, user: User) : Promise<Order> {
         const local = await this.localRepository.createQueryBuilder('local')
                                                     .where('local.id = :localId', { localId: data.localId })
                                                     .innerJoinAndSelect('local.user', 'user')
@@ -126,6 +127,13 @@ export class OrderService {
             await this.paymentOrderRepository.save(newPaymentOrder);
             this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} ${paymentType.currency} in local ${local.name}`);
         }
+        // se trae la orden completa para poder colocarla como orden sin entrega
+        const order = await this.orderRepository.createQueryBuilder('order')
+                                                .where('order.id = :id', { id: newOrder.id })
+                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+                                                .innerJoinAndSelect('orderItem.product','product')
+                                                .getOne(); 
+        return order;
     }
 
     async getOrdersSummaryByPaymentType(localId: string) {
@@ -204,7 +212,7 @@ export class OrderService {
         let orders : any;
         if (user.role === Roles.ADMIN){
             orders = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.delivered = false')
+                                                .where('order.deliveredDate is null')
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
                                                 .orderBy('order.creationDate','ASC')
@@ -217,7 +225,7 @@ export class OrderService {
                 throw new NotFoundException(`Local para usuario ${user.username} no encontrado`);
             }
             orders = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.delivered = false')
+                                                .where('order.deliveredDate is null')
                                                 .andWhere('order.localId = :localId', { localId: local.id })
                                                 .innerJoinAndSelect('order.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
@@ -229,7 +237,7 @@ export class OrderService {
         return orders;
     }
 
-    async orderDelivered(user: User, orderId: string) : Promise<void> {
+    async orderDelivered(user: User, orderId: string, dto : DateDto) : Promise<void> {
         if (user.role != Roles.SELLER && user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
@@ -249,7 +257,7 @@ export class OrderService {
                 throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso para marcar orden como entregada`);
             }
         }
-        order.deliveredDate = new Date();
+        order.deliveredDate = new Date(dto.date);
         await this.orderRepository.save(order);
         this.logger.log(`Order with id ${order.id} delivered`);
     }
