@@ -71,13 +71,14 @@ export class OrderController {
         };
     }
 
-    @Get('/summaryPaymentType/:id')
+    @Post('/summaryPaymentType/:id')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrdersSummaryByPaymentType(
-        @Param('id') localId: string
+        @Param('id') localId: string,
+        @Body() dto: DateDto
     ) : Promise<any> {
-        const summary = await this.orderService.getOrdersSummaryByPaymentType(localId);
+        const summary = await this.orderService.getOrdersSummaryByPaymentType(localId, dto.date);
         return {
             statusCode: HttpStatus.OK,
             summary

@@ -92,6 +92,7 @@ export class OrderService {
             throw new BadRequestException(`Monto total ${data.totalDl} no coincide con el monto total de los pagos ${totalAmount}`);
         }
         const newOrder = this.orderRepository.create({
+            creationDate: data.creationDate,
             totalDl: data.totalDl,
             totalBs: data.totalBs,
             local: local
@@ -136,9 +137,8 @@ export class OrderService {
         return order;
     }
 
-    async getOrdersSummaryByPaymentType(localId: string) {
-        const now = new Date();
-        const hours = now.getHours();
+    async getOrdersSummaryByPaymentType(localId: string, date: Date) {
+        const hours = date.getHours();
         let ordersByPaymentType : any;
         if (hours >= 0 && hours <= 6){
             ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
@@ -257,7 +257,7 @@ export class OrderService {
                 throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso para marcar orden como entregada`);
             }
         }
-        order.deliveredDate = new Date(dto.date);
+        order.deliveredDate = dto.date;
         await this.orderRepository.save(order);
         this.logger.log(`Order with id ${order.id} delivered`);
     }

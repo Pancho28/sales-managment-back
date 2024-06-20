@@ -5,6 +5,7 @@ import { ProductService } from "./product.service";
 import { User } from "../users/entities";
 import { Product, Category } from "./entities";
 import { CreateProductDto, CategoryDto, UpdateProductDto } from "./dtos";
+import { DateDto } from "../helpers/date.dto";
 
 @Controller('products')
 export class ProductController {
@@ -143,15 +144,16 @@ export class ProductController {
         };
     }
 
-    @Get('/summaryByPrice/:id')
+    @Post('/summaryByPrice/:id')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getSummaryByPrice(
-        @Param('id') localId: string
+        @Param('id') localId: string,
+        @Body() dto: DateDto
     ): Promise<any> {
         let summary: any;
 
-        summary = await this.productService.getProductsSummaryByPrice(localId);
+        summary = await this.productService.getProductsSummaryByPrice(localId, dto.date);
 
         return {
             statusCode: HttpStatus.OK,

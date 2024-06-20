@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsDate, MaxDate } from 'class-validator';
+import { IsNotEmpty, IsDate } from 'class-validator';
 
 export class DateDto {
         

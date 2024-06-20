@@ -2,7 +2,6 @@ import {
     Entity, 
     Column, 
     PrimaryGeneratedColumn,
-    CreateDateColumn,
     OneToMany
 } from 'typeorm';
 import { Product } from "./";
@@ -17,7 +16,7 @@ export class Category {
     @Column({type: 'varchar'})
     name: string;
   
-    @CreateDateColumn({ type: 'datetime', readonly: true})
+    @Column({ type: 'datetime', readonly: true})
     creationDate: Date;
 
     @Column({ type: 'datetime', nullable: true, default: null})

@@ -61,6 +61,7 @@ export class ProductService {
         const newProduct = this.productRepository.create({
             name: product.name,
             price: product.price,
+            creationDate: product.creationDate,
             category,
             local
         });
@@ -89,7 +90,6 @@ export class ProductService {
         }
         productDto.name ? product.name = productDto.name : null;
         productDto.price ? product.price = productDto.price : null;
-        product.updateDate = new Date();
         await this.productRepository.save(product);
         this.logger.log(`Product name ${product.name} updated`);
         return product;
@@ -104,7 +104,8 @@ export class ProductService {
             throw new BadRequestException(`Categoria con nombre ${category.name} ya existe`);
         }
         const newCategory = this.categoryRepository.create({
-            name: category.name
+            name: category.name,
+            creationDate: category.date
         });
         await this.categoryRepository.save(newCategory);
         this.logger.log(`Category with name ${category.name} created`);
@@ -124,7 +125,7 @@ export class ProductService {
             throw new BadRequestException(`Categoria con nombre ${categoryExist.name} ya existe`);
         }
         category.name = categoryDto.name;
-        category.updateDate = new Date();
+        category.updateDate = categoryDto.date;
         await this.categoryRepository.save(category);
         this.logger.log(`Category with id ${categoryId} updated`);
         return category;
@@ -163,9 +164,8 @@ export class ProductService {
         return product;
     }
 
-    async getProductsSummaryByPrice(localId: string) {
-        const now = new Date();
-        const hours = now.getHours();
+    async getProductsSummaryByPrice(localId: string, date: Date) {
+        const hours = date.getHours();
         let productsSummaryByPrice : any;
         if (hours >= 0 && hours <= 6){
             productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")

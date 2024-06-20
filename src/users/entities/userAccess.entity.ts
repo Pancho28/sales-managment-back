@@ -2,7 +2,6 @@ import {
     Entity, 
     Column, 
     PrimaryGeneratedColumn,
-    CreateDateColumn,
     ManyToOne,
     JoinColumn
 } from 'typeorm';
@@ -27,7 +26,7 @@ export class UserAccess {
     @Column({type: 'varchar', nullable: true})
     password: string;
   
-    @CreateDateColumn({ type: 'datetime', readonly: true})
+    @Column({ type: 'datetime', readonly: true})
     creationDate: Date;
     
 }

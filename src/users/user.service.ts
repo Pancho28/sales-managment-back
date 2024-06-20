@@ -107,8 +107,8 @@ export class UserService implements OnModuleInit{
         return access;
     }
 
-    async updateLastLogin(user: User) : Promise<void> {
-        user.lastLogin = new Date();
+    async updateLastLogin(user: User, date: Date) : Promise<void> {
+        user.lastLogin = date;
         await this.userRepository.save(user);
     }
 
@@ -120,7 +120,8 @@ export class UserService implements OnModuleInit{
         };
         const newUser = this.userRepository.create({
             username: dto.username,
-            password: dto.password
+            password: dto.password,
+            creationDate: dto.creationDate
         });
         await this.userRepository.save(newUser);
         this.logger.log(`User with username ${newUser.username} created`);
@@ -198,7 +199,8 @@ export class UserService implements OnModuleInit{
         }
         const newAccess = this.accessRepository.create({
             name: access.name,
-            description: access.description
+            description: access.description,
+            creationDate: access.creationDate
         });
         await this.accessRepository.save(newAccess);
         this.logger.log(`Access with name ${newAccess.name} created`);
@@ -242,7 +244,8 @@ export class UserService implements OnModuleInit{
         const userAccess = this.userAccessRepository.create({
             user: userExist,
             access: accessExist,
-            password: data.password
+            password: data.password,
+            creationDate: data.creationDate
         });
         await this.userAccessRepository.save(userAccess);
         this.logger.log(`Access ${accessExist.name} asign to user ${userExist.username}`);

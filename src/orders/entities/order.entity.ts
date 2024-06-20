@@ -2,7 +2,6 @@ import {
     Entity, 
     Column, 
     PrimaryGeneratedColumn,
-    CreateDateColumn,
     ManyToOne,
     JoinColumn,
     OneToMany
@@ -23,7 +22,7 @@ export class Order {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalBs: number;
   
-    @CreateDateColumn({ type: 'timestamp', readonly: true})
+    @Column({ type: 'timestamp', readonly: true})
     creationDate: Date;
 
     @Column({ type: 'timestamp', nullable: true, default: null})
