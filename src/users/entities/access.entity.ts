@@ -2,7 +2,6 @@ import {
     Entity, 
     Column, 
     PrimaryGeneratedColumn,
-    CreateDateColumn,
     OneToMany
 } from 'typeorm';
 import { UserAccess } from './userAccess.entity';
@@ -20,7 +19,7 @@ export class Access {
     @Column({type: 'varchar', nullable: true})
     description: string;
   
-    @CreateDateColumn({ type: 'datetime', readonly: true})
+    @Column({ type: 'datetime', readonly: true})
     creationDate: Date;
 
     @OneToMany(() => UserAccess, userAccess => userAccess.access)

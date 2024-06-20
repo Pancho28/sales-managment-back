@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, MaxLength, IsEmpty } from "class-validator";
+import { IsNotEmpty, IsString, MaxLength, IsDate } from "class-validator";
+import { Transform } from 'class-transformer';
 
 export class CategoryDto {
         
@@ -6,8 +7,10 @@ export class CategoryDto {
     @IsNotEmpty()
     @IsString()
     name: string;
-
-    @IsEmpty()
-    updateDate: Date; 
+        
+    @IsNotEmpty()
+    @Transform( ({ value }) => new Date(value))
+    @IsDate()
+    date: Date;
 
 }

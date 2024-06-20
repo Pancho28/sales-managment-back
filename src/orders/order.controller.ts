@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { OrderService } from "./order.service";
 import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
+import { DateDto } from "../helpers/date.dto";
 import { User } from "../users/entities";
 import { Order } from "./entities";
 
@@ -62,20 +63,22 @@ export class OrderController {
         @GetUser() user: User,
         @Body() dto: CreateOrderDto
     ): Promise<any> {
-        await this.orderService.createorder(dto, user);
+        const newOrder = await this.orderService.createorder(dto, user);
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Orden creada'
+            message: 'Orden creada',
+            order: newOrder
         };
     }
 
-    @Get('/summaryPaymentType/:id')
+    @Post('/summaryPaymentType/:id')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrdersSummaryByPaymentType(
-        @Param('id') localId: string
+        @Param('id') localId: string,
+        @Body() dto: DateDto
     ) : Promise<any> {
-        const summary = await this.orderService.getOrdersSummaryByPaymentType(localId);
+        const summary = await this.orderService.getOrdersSummaryByPaymentType(localId, dto.date);
         return {
             statusCode: HttpStatus.OK,
             summary
@@ -119,6 +122,34 @@ export class OrderController {
         return {
             statusCode: HttpStatus.OK,
             paymentTypes
+        };
+    }
+
+    @Get('/notdelivered/all')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getNotDeliveredOrders(
+        @GetUser() user: User
+    ): Promise<any> {
+        const orders = await this.orderService.getOrdersNotDelivered(user);
+        return {
+            statusCode: HttpStatus.OK,
+            orders
+        };
+    }
+
+    @Post('/notdelivered/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async orderDelivered(
+        @GetUser() user: User,
+        @Param('id') orderId: string,
+        @Body() dto: DateDto
+    ): Promise<any> {
+        await this.orderService.orderDelivered(user,orderId,dto);
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Orden entregada'
         };
     }
 

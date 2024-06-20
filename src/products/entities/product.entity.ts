@@ -2,7 +2,6 @@ import {
     Entity, 
     Column, 
     PrimaryGeneratedColumn,
-    CreateDateColumn,
     OneToMany,
     ManyToOne,
     JoinColumn
@@ -27,10 +26,10 @@ export class Product {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
   
-    @CreateDateColumn({ type: 'datetime', readonly: true})
+    @Column({ type: 'datetime', readonly: true})
     creationDate: Date;
 
-    @CreateDateColumn({ type: 'datetime', nullable: true})
+    @Column({ type: 'datetime', nullable: true, default: null})
     updateDate: Date;
 
     @OneToMany(() => OrderItem, orderItem => orderItem.product)

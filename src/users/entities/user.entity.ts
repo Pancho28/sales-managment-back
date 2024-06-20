@@ -2,7 +2,6 @@ import {
   Entity, 
   Column, 
   PrimaryGeneratedColumn,
-  CreateDateColumn,
   BeforeInsert,
   Unique,
   OneToMany
@@ -31,10 +30,10 @@ export class User {
   @Column({ type: 'varchar', default: 'ACTIVE'})
   status: string;
 
-  @CreateDateColumn({ type: 'datetime', readonly: true})
+  @Column({ type: 'datetime', readonly: true})
   creationDate: Date;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: true})
+  @Column({ type: 'timestamp', nullable: true, default: null})
   lastLogin: Date;
 
   @OneToMany(() => UserAccess, userAccess => userAccess.user)

@@ -5,6 +5,7 @@ import { CreateUserLocalDto, CreateAccessDto, UpdateAccessDto, GrantUserAccessDt
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { hash } from 'bcryptjs';
+import { Roles } from "../helpers/enum";
 
 @Injectable()
 export class UserService implements OnModuleInit{
@@ -40,8 +41,7 @@ export class UserService implements OnModuleInit{
                 username,
                 password,
                 status,
-                role,
-                lastLogin: null
+                role 
             });
             await this.userRepository.save(superUser);
             this.logger.log(`Creating default user with username ${username}`);
@@ -49,7 +49,7 @@ export class UserService implements OnModuleInit{
     }
 
     validateAdmin(user: User) : void {
-        if (user.role != 'ADMIN'){
+        if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
     }
@@ -73,7 +73,7 @@ export class UserService implements OnModuleInit{
         if (!user){
             throw new NotFoundException(`Usuario ${username} no existe`);
         }
-        if (user.status === 'INACTIVE' && admin.role != 'ADMIN'){
+        if (user.status === 'INACTIVE' && admin.role != Roles.ADMIN){
             throw new BadRequestException(`Usuario ${user.id} inactivo`);
         }
         return user;
@@ -82,7 +82,7 @@ export class UserService implements OnModuleInit{
     async getUsers(user: User) : Promise<User[]> {     
         this.validateAdmin(user);
         const users = await this.userRepository.createQueryBuilder('user')
-                                                .where('user.role != :role', { role : 'ADMIN' })
+                                                .where('user.role != :role', { role : Roles.ADMIN })
                                                 .getMany();
         return users;
     }
@@ -92,7 +92,7 @@ export class UserService implements OnModuleInit{
                                                 .select(['local.id', 'local.name', 'local.dolar'])
                                                 .where('local.user = :userId', { userId: user.id })
                                                 .getOne();
-        if (!local && user.role != 'ADMIN'){
+        if (!local && user.role != Roles.ADMIN){
             throw new NotFoundException(`Local no encontrado para usuario con id ${user.id}`);
         }
         return local;
@@ -107,8 +107,8 @@ export class UserService implements OnModuleInit{
         return access;
     }
 
-    async updateLastLogin(user: User) : Promise<void> {
-        user.lastLogin = new Date();
+    async updateLastLogin(user: User, date: Date) : Promise<void> {
+        user.lastLogin = date;
         await this.userRepository.save(user);
     }
 
@@ -121,7 +121,7 @@ export class UserService implements OnModuleInit{
         const newUser = this.userRepository.create({
             username: dto.username,
             password: dto.password,
-            lastLogin: null
+            creationDate: dto.creationDate
         });
         await this.userRepository.save(newUser);
         this.logger.log(`User with username ${newUser.username} created`);
@@ -199,7 +199,8 @@ export class UserService implements OnModuleInit{
         }
         const newAccess = this.accessRepository.create({
             name: access.name,
-            description: access.description
+            description: access.description,
+            creationDate: access.creationDate
         });
         await this.accessRepository.save(newAccess);
         this.logger.log(`Access with name ${newAccess.name} created`);
@@ -243,7 +244,8 @@ export class UserService implements OnModuleInit{
         const userAccess = this.userAccessRepository.create({
             user: userExist,
             access: accessExist,
-            password: data.password
+            password: data.password,
+            creationDate: data.creationDate
         });
         await this.userAccessRepository.save(userAccess);
         this.logger.log(`Access ${accessExist.name} asign to user ${userExist.username}`);

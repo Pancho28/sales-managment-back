@@ -4,6 +4,7 @@ import { Product, Category } from "./entities";
 import { CreateProductDto, CategoryDto, UpdateProductDto } from "./dtos";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Roles } from "../helpers/enum";
 
 @Injectable()
 export class ProductService {
@@ -24,18 +25,21 @@ export class ProductService {
 
     async getProducts(user: User) : Promise<Product[]> { 
         let products: Product[]; 
-        if (user.role != 'ADMIN'){  
+        if (user.role != Roles.ADMIN){  
             const localId = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.userId = :userId', { userId: user.id })
                                                 .getOne();
             products = await this.productRepository.createQueryBuilder('product')
-                                                        .innerJoinAndSelect('product.category', 'category')
-                                                        .where('product.localId = :localId', { localId: localId.id })
-                                                        .andWhere('product.status = :status', { status: 'ACTIVE' })
-                                                        .getMany();
+                                                    .innerJoinAndSelect('product.category', 'category')
+                                                    .where('product.localId = :localId', { localId: localId.id })
+                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                    .getMany();
         }
         else {
-            products = await this.productRepository.find();
+            products = await this.productRepository.createQueryBuilder('product')
+                                                    .innerJoinAndSelect('product.category', 'category')
+                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                    .getMany();
             
         }
         return products;
@@ -57,7 +61,7 @@ export class ProductService {
         const newProduct = this.productRepository.create({
             name: product.name,
             price: product.price,
-            updateDate: null,
+            creationDate: product.creationDate,
             category,
             local
         });
@@ -86,14 +90,13 @@ export class ProductService {
         }
         productDto.name ? product.name = productDto.name : null;
         productDto.price ? product.price = productDto.price : null;
-        product.updateDate = new Date();
         await this.productRepository.save(product);
         this.logger.log(`Product name ${product.name} updated`);
         return product;
     }
 
     async createCategory(user: User, category: CategoryDto) : Promise<Category> {
-        if (user.role != 'ADMIN'){
+        if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const categoryExist = await this.categoryRepository.findOneBy({ name: category.name });
@@ -102,7 +105,7 @@ export class ProductService {
         }
         const newCategory = this.categoryRepository.create({
             name: category.name,
-            updateDate: null
+            creationDate: category.date
         });
         await this.categoryRepository.save(newCategory);
         this.logger.log(`Category with name ${category.name} created`);
@@ -110,7 +113,7 @@ export class ProductService {
     }
 
     async updateCategory(user: User, categoryDto: CategoryDto, categoryId: string) : Promise<Category> {
-        if (user.role != 'ADMIN'){
+        if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
         const category = await this.categoryRepository.findOneBy({ id: categoryId });
@@ -122,7 +125,7 @@ export class ProductService {
             throw new BadRequestException(`Categoria con nombre ${categoryExist.name} ya existe`);
         }
         category.name = categoryDto.name;
-        category.updateDate = new Date();
+        category.updateDate = categoryDto.date;
         await this.categoryRepository.save(category);
         this.logger.log(`Category with id ${categoryId} updated`);
         return category;
@@ -161,9 +164,8 @@ export class ProductService {
         return product;
     }
 
-    async getProductsSummaryByPrice(localId: string) {
-        const now = new Date();
-        const hours = now.getHours();
+    async getProductsSummaryByPrice(localId: string, date: Date) {
+        const hours = date.getHours();
         let productsSummaryByPrice : any;
         if (hours >= 0 && hours <= 6){
             productsSummaryByPrice = await this.productRepository.createQueryBuilder("product")

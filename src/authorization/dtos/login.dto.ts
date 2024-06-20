@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, MaxLength } from "class-validator";
+import { IsNotEmpty, IsString, MaxLength, IsDate } from "class-validator";
+import { Transform } from 'class-transformer';
 
 export class LoginDto {
     
@@ -11,5 +12,10 @@ export class LoginDto {
     @IsNotEmpty()
     @IsString()
     password: string;
+        
+    @IsNotEmpty()
+    @Transform( ({ value }) => new Date(value))
+    @IsDate()
+    date: Date;
 
 }

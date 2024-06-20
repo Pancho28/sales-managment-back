@@ -1,8 +1,14 @@
-import { IsNumber, IsNotEmpty, IsUUID, IsPositive, ValidateNested } from "class-validator";
+import { IsNumber, IsNotEmpty, IsUUID, IsPositive, ValidateNested, IsDate } from "class-validator";
+import { Transform } from 'class-transformer';
 import { Type } from 'class-transformer';
 import { CreateOrderItemDto, CreatePaymentOrderDto } from "./";
 
 export class CreateOrderDto {
+        
+    @IsNotEmpty()
+    @Transform( ({ value }) => new Date(value))
+    @IsDate()
+    creationDate: Date;
         
     @IsNotEmpty()
     @IsNumber()
