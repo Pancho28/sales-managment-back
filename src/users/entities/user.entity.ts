@@ -30,6 +30,9 @@ export class User {
   @Column({ type: 'varchar', default: 'ACTIVE'})
   status: string;
 
+  @Column({ type: 'varchar', default: 'America/Caracas'})
+  tz: string;
+
   @Column({ type: 'datetime', readonly: true})
   creationDate: Date;
 

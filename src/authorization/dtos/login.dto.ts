@@ -12,10 +12,5 @@ export class LoginDto {
     @IsNotEmpty()
     @IsString()
     password: string;
-        
-    @IsNotEmpty()
-    @Transform( ({ value }) => new Date(value))
-    @IsDate()
-    date: Date;
 
 }
