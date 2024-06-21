@@ -4,6 +4,7 @@ import { LoginDto } from './dtos/login.dto';
 import { compare } from 'bcrypt';
 import { UserService } from '../users/user.service';
 import { User, Local, Access } from '../users/entities';
+import * as moment from "moment-timezone";
 
 @Injectable()
 export class AuthorizationService {
@@ -36,18 +37,20 @@ export class AuthorizationService {
         reqPass : acces.userAccess[0] ?  true : false
       })
     })
-    const {id, username, role} = user;
+    const {id, username, role, tz} = user;
     const payload = { sub: id };
     const response = {
       id,
       username,
       role,
+      tz,
       local: local ? local : null,
       access: accesUser,
       accessToken: this.jwtService.sign(payload)
     } 
-    this.userService.updateLastLogin(user, loginDto.date);
-    this.logger.log(`Login attempt with username: ${loginDto.username} at ${loginDto.date}`);
+    const date = new Date(moment().tz(tz).format());
+    this.userService.updateLastLogin(user, date);
+    this.logger.log(`Login attempt with username: ${loginDto.username} at ${date}`);
     return response;
   }
 
