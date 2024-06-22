@@ -117,8 +117,10 @@ export class OrderController {
     @Get('/paymentType/all')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async getPaymentTypes(): Promise<any> {
-        const paymentTypes = await this.orderService.getPaymentTypes();
+    async getPaymentTypes(
+        @GetUser() user: User
+    ): Promise<any> {
+        const paymentTypes = await this.orderService.getPaymentTypes(user);
         return {
             statusCode: HttpStatus.OK,
             paymentTypes

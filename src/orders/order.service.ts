@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { Order, OrderItem, PaymentType, PaymentOrder } from "./entities";
+import { Order, OrderItem, PaymentType, PaymentOrder, PaymentLocal } from "./entities";
 import { Local, User } from "../users/entities";
 import { ProductService } from "../products/product.service";
 import { Repository } from 'typeorm';
@@ -21,6 +21,8 @@ export class OrderService {
         private orderItemRepository: Repository<OrderItem>,
         @InjectRepository(PaymentType)
         private paymentTypeRepository: Repository<PaymentType>,
+        @InjectRepository(PaymentLocal)
+        private paymentRepository: Repository<PaymentLocal>,
         @InjectRepository(PaymentOrder)
         private paymentOrderRepository: Repository<PaymentOrder>,
         @InjectRepository(Local)
@@ -114,19 +116,22 @@ export class OrderService {
             await this.orderItemRepository.save(newOrderItem);
             this.logger.log(`OrderItem created for product ${product.name} in local ${local.name}`);
         }
-        const payments = await this.paymentTypeRepository.find();
+        const payments = await this.paymentRepository.createQueryBuilder('payment')
+                                                    .innerJoinAndSelect('payment.paymentType', 'paymentType')
+                                                    .where('payment.localId = :localId', { localId: local.id })
+                                                    .getMany();
         for (const payment of data.payments){
-            const paymentType = payments.find(p => p.id === payment.paymentTypeId);
+            const paymentType = payments.find(p => p.paymentType.id === payment.paymentTypeId);
             if (!paymentType){
                 throw new NotFoundException(`Tipo de pago con id ${payment.paymentTypeId} no encontrado`);
             }
             const newPaymentOrder = this.paymentOrderRepository.create({
                 amount: payment.amount,
-                paymentType,
+                payment: paymentType,
                 order: newOrder
             });
             await this.paymentOrderRepository.save(newPaymentOrder);
-            this.logger.log(`PaymentOrder created for paymentType ${paymentType.name} ${paymentType.currency} in local ${local.name}`);
+            this.logger.log(`PaymentOrder created for paymentType ${paymentType.paymentType.name} ${paymentType.paymentType.currency} in local ${local.name}`);
         }
         // se trae la orden completa para poder colocarla como orden sin entrega
         const order = await this.orderRepository.createQueryBuilder('order')
@@ -146,7 +151,8 @@ export class OrderService {
                                         .addSelect("payment_type.name", "name")
                                         .addSelect("payment_type.currency", "currency")
                                         .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
-                                        .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
+                                        .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
+                                        .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
                                         .where("order.localId = :localId", { localId })
                                         .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
                                         .groupBy("payment_type.name")
@@ -177,11 +183,20 @@ export class OrderService {
         if (paymentTypeExist){
             throw new BadRequestException(`Tipo de pago con nombre ${data.name} ya existe`);
         }
+        const local = await this.localRepository.findOneBy({ id: data.localId });
+        if (!local){
+            throw new NotFoundException(`Local con id ${data.localId} no encontrado`);
+        }
         const newPaymentType = this.paymentTypeRepository.create({
             name: data.name,
             currency: data.currency
         });
         await this.paymentTypeRepository.save(newPaymentType);
+        const newPayment = this.paymentRepository.create({
+            paymentType: newPaymentType,
+            local
+        });
+        await this.paymentRepository.save(newPayment);
         this.logger.log(`PaymentType with name ${newPaymentType.name} created`);
         return newPaymentType;
     }
@@ -203,9 +218,24 @@ export class OrderService {
         this.logger.log(`PaymentType with id ${paymentType.id} updated`);
     }
 
-    async getPaymentTypes() : Promise<PaymentType[]> {
-        const paymentTypes = await this.paymentTypeRepository.find();
-        return paymentTypes;
+    async getPaymentTypes(user : User) : Promise<PaymentType[]> {
+        if (user.role = Roles.ADMIN){
+            const paymentTypes = await this.paymentTypeRepository.find();
+            return paymentTypes;
+        }
+        else {
+            const local = await this.localRepository.createQueryBuilder('local')
+                                                    .where('local.userId = :userId', { userId: user.id })
+                                                    .getOne();
+            if (!local){
+                throw new NotFoundException(`Local para usuario ${user.username} no encontrado`);
+            }
+            const paymentTypes = await this.paymentTypeRepository.createQueryBuilder('paymentType')
+                                                    .innerJoin('paymentType.payment', 'payment')
+                                                    .where('payment.localId = :localId', { localId: local.id })
+                                                    .getMany();
+            return paymentTypes;
+        }
     }
 
     async getOrdersNotDelivered(user: User) : Promise<Order[]> {

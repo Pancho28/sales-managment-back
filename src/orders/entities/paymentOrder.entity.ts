@@ -3,10 +3,9 @@ import {
     Column, 
     PrimaryGeneratedColumn,
     ManyToOne,
-    JoinColumn,
-    OneToMany
+    JoinColumn
 } from 'typeorm';
-import { PaymentType, Order } from "./";
+import { PaymentLocal, Order } from "./";
   
   
 @Entity()
@@ -18,9 +17,9 @@ export class PaymentOrder {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     amount: number;
 
-    @ManyToOne(type => PaymentType, paymentType => paymentType.id , {onDelete: 'CASCADE'})
+    @ManyToOne(type => PaymentLocal, payment => payment.id , {onDelete: 'CASCADE'})
     @JoinColumn()
-    paymentType: PaymentType;
+    payment: PaymentLocal;
 
     @ManyToOne(type => Order, order => order.id , {onDelete: 'CASCADE'})
     order: Order;

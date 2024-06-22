@@ -41,7 +41,8 @@ export class UserService implements OnModuleInit{
                 username,
                 password,
                 status,
-                role 
+                role,
+                creationDate: new Date()
             });
             await this.userRepository.save(superUser);
             this.logger.log(`Creating default user with username ${username}`);

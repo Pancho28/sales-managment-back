@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from "class-validator";
+import { IsNotEmpty, IsString, MaxLength, IsUUID } from "class-validator";
 
 export class CreatePaymentTypeDto {
         
@@ -11,5 +11,9 @@ export class CreatePaymentTypeDto {
     @IsNotEmpty()
     @IsString()
     currency: string; 
+        
+    @IsNotEmpty()
+    @IsUUID()
+    localId: string;
 
 }
