@@ -4,7 +4,7 @@ import {
     PrimaryGeneratedColumn,
     OneToMany
 } from 'typeorm';
-import { Order, PaymentOrder } from "./";
+import { PaymentLocal } from "./";
   
   
 @Entity()
@@ -19,8 +19,8 @@ export class PaymentType {
     @Column({type: 'varchar'})
     currency: string;
 
-    @OneToMany(() => PaymentOrder, paymentOrder => paymentOrder.paymentType)
-    paymentOrder: PaymentOrder;
+    @OneToMany(() => PaymentLocal, payment => payment.paymentType)
+    payment: PaymentLocal;
     
 }
   
