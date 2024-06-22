@@ -4,14 +4,14 @@ import { UserModule } from "../users/user.module";
 import { ProductModule } from "../products/product.module";
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
-import { Order, OrderItem, PaymentType, PaymentOrder, PaymentLocal } from "./entities";
+import { Orders, OrderItem, PaymentType, PaymentOrder, PaymentLocal } from "./entities";
 import { Local } from "../users/entities";
 import { Product } from "../products/entities";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
-            Order, 
+            Orders, 
             OrderItem, 
             PaymentType, 
             Local,

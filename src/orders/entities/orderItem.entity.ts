@@ -5,7 +5,7 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
-import { Order } from "./";
+import { Orders } from "./";
 import { Product } from "../../products/entities";
   
   
@@ -21,9 +21,9 @@ export class OrderItem {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
-    @ManyToOne(type => Order, order => order.id , {onDelete: 'CASCADE'})
+    @ManyToOne(type => Orders, order => order.id , {onDelete: 'CASCADE'})
     @JoinColumn()
-    order: Order;
+    order: Orders;
 
     @ManyToOne(type => Product, product => product.id , {onDelete: 'CASCADE'})
     @JoinColumn()

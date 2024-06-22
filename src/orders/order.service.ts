@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { Order, OrderItem, PaymentType, PaymentOrder, PaymentLocal } from "./entities";
+import { Orders, OrderItem, PaymentType, PaymentOrder, PaymentLocal } from "./entities";
 import { Local, User } from "../users/entities";
 import { ProductService } from "../products/product.service";
 import { Repository } from 'typeorm';
@@ -15,8 +15,8 @@ export class OrderService {
 
     constructor(
         private readonly productService: ProductService,
-        @InjectRepository(Order)
-        private orderRepository: Repository<Order>,
+        @InjectRepository(Orders)
+        private orderRepository: Repository<Orders>,
         @InjectRepository(OrderItem)
         private orderItemRepository: Repository<OrderItem>,
         @InjectRepository(PaymentType)
@@ -32,13 +32,13 @@ export class OrderService {
         this.logger = new Logger(OrderService.name);
     }
 
-    async getOrders(user : User) : Promise<Order[]> {  
+    async getOrders(user : User) : Promise<Orders[]> {  
         let orders:any;
         if (user.role = Roles.ADMIN){
-            orders = await this.orderRepository.createQueryBuilder('order')
-                                                    .innerJoinAndSelect('order.orderItem', 'orderItem')
+            orders = await this.orderRepository.createQueryBuilder('orders')
+                                                    .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                     .innerJoinAndSelect('orderItem.product','product')
-                                                    .orderBy('order.creationDate','DESC')
+                                                    .orderBy('orders.creationDate','DESC')
                                                     .getMany();
         }else {
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
@@ -46,26 +46,26 @@ export class OrderService {
         return orders;
     }
 
-    async getOrdersByLocal(localId: string) : Promise<Order[]> {
+    async getOrdersByLocal(localId: string) : Promise<Orders[]> {
         const local = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.id = :localId', { localId })
                                                 .getOne();
         if (!local){
             throw new NotFoundException(`Local con id ${localId} no encontrado`);
         }
-        const orders = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.localId = :localId', { localId })
-                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+        const orders = await this.orderRepository.createQueryBuilder('orders')
+                                                .where('orders.localId = :localId', { localId })
+                                                .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
-                                                .orderBy('order.creationDate','DESC')
+                                                .orderBy('orders.creationDate','DESC')
                                                 .getMany();
         return orders;
     }
 
-    async getOrderById(id: string) : Promise<Order> {
-        const order = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.id = :id', { id })
-                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+    async getOrderById(id: string) : Promise<Orders> {
+        const order = await this.orderRepository.createQueryBuilder('orders')
+                                                .where('orders.id = :id', { id })
+                                                .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
                                                 .getOne();
         if (!order){
@@ -74,7 +74,7 @@ export class OrderService {
         return order;
     }
 
-    async createorder(data: CreateOrderDto, user: User) : Promise<Order> {
+    async createorder(data: CreateOrderDto, user: User) : Promise<Orders> {
         const local = await this.localRepository.createQueryBuilder('local')
                                                     .where('local.id = :localId', { localId: data.localId })
                                                     .innerJoinAndSelect('local.user', 'user')
@@ -134,9 +134,9 @@ export class OrderService {
             this.logger.log(`PaymentOrder created for paymentType ${paymentType.paymentType.name} ${paymentType.paymentType.currency} in local ${local.name}`);
         }
         // se trae la orden completa para poder colocarla como orden sin entrega
-        const order = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.id = :id', { id: newOrder.id })
-                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+        const order = await this.orderRepository.createQueryBuilder('orders')
+                                                .where('orders.id = :id', { id: newOrder.id })
+                                                .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
                                                 .getOne(); 
         return order;
@@ -146,28 +146,28 @@ export class OrderService {
         const hours = date.getHours();
         let ordersByPaymentType : any;
         if (hours >= 0 && hours <= 6){
-            ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
+            ordersByPaymentType = await this.orderRepository.createQueryBuilder("orders")
                                         .select("SUM(payment_order.amount)", "total")
                                         .addSelect("payment_type.name", "name")
                                         .addSelect("payment_type.currency", "currency")
-                                        .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+                                        .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
                                         .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
                                         .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
-                                        .where("order.localId = :localId", { localId })
-                                        .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                        .where("orders.localId = :localId", { localId })
+                                        .andWhere("orders.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
                                         .groupBy("payment_type.name")
                                         .addGroupBy("payment_type.currency")
                                         .getRawMany();
         }
         else {
-            ordersByPaymentType = await this.orderRepository.createQueryBuilder("order")
+            ordersByPaymentType = await this.orderRepository.createQueryBuilder("orders")
                                         .select("SUM(payment_order.amount)", "total")
                                         .addSelect("payment_type.name", "name")
                                         .addSelect("payment_type.currency", "currency")
-                                        .innerJoin("payment_order","payment_order","order.id = payment_order.orderId")
+                                        .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
                                         .innerJoin("payment_type","payment_type","payment_order.paymentTypeId = payment_type.id")
-                                        .where("order.localId = :localId", { localId })
-                                        .andWhere("date(order.creationdate) = current_date()")
+                                        .where("orders.localId = :localId", { localId })
+                                        .andWhere("date(orders.creationdate) = current_date()")
                                         .groupBy("payment_type.name")
                                         .addGroupBy("payment_type.currency")
                                         .getRawMany();
@@ -238,14 +238,14 @@ export class OrderService {
         }
     }
 
-    async getOrdersNotDelivered(user: User) : Promise<Order[]> {
+    async getOrdersNotDelivered(user: User) : Promise<Orders[]> {
         let orders : any;
         if (user.role === Roles.ADMIN){
-            orders = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.deliveredDate is null')
-                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+            orders = await this.orderRepository.createQueryBuilder('orders')
+                                                .where('orders.deliveredDate is null')
+                                                .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
-                                                .orderBy('order.creationDate','ASC')
+                                                .orderBy('orders.creationDate','ASC')
                                                 .getMany();
         } else if (user.role === Roles.SELLER) {
             const local = await this.localRepository.createQueryBuilder('local')
@@ -254,12 +254,12 @@ export class OrderService {
             if (!local){
                 throw new NotFoundException(`Local para usuario ${user.username} no encontrado`);
             }
-            orders = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.deliveredDate is null')
-                                                .andWhere('order.localId = :localId', { localId: local.id })
-                                                .innerJoinAndSelect('order.orderItem', 'orderItem')
+            orders = await this.orderRepository.createQueryBuilder('orders')
+                                                .where('orders.deliveredDate is null')
+                                                .andWhere('orders.localId = :localId', { localId: local.id })
+                                                .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                 .innerJoinAndSelect('orderItem.product','product')
-                                                .orderBy('order.creationDate','ASC')
+                                                .orderBy('orders.creationDate','ASC')
                                                 .getMany();
         }else {
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
@@ -271,9 +271,9 @@ export class OrderService {
         if (user.role != Roles.SELLER && user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
-        const order = await this.orderRepository.createQueryBuilder('order')
-                                                .where('order.id = :orderId', { orderId })
-                                                .innerJoinAndSelect('order.local', 'local')
+        const order = await this.orderRepository.createQueryBuilder('orders')
+                                                .where('orders.id = :orderId', { orderId })
+                                                .innerJoinAndSelect('orders.local', 'local')
                                                 .getOne();
         if (!order){
             throw new NotFoundException(`Orden con id ${orderId} no encontrada`);

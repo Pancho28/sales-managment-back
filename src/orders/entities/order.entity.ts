@@ -11,7 +11,7 @@ import { Local } from "../../users/entities";
   
   
 @Entity()
-export class Order {
+export class Orders {
   
     @PrimaryGeneratedColumn("uuid")
     id: string;

@@ -7,7 +7,7 @@ import {
     OneToMany
 } from 'typeorm';
 import { User } from '.';
-import { Order } from "../../orders/entities";
+import { Orders } from "../../orders/entities";
 import { Product } from "../../products/entities";
   
   
@@ -27,10 +27,10 @@ export class Local {
     @JoinColumn()
     user: User;
 
-    @OneToMany(() => Order, order => order.local)
-    order: Order;
+    @OneToMany(() => Orders, order => order.local)
+    order: Orders;
 
-    @OneToMany(() => Order, product => product.local)
+    @OneToMany(() => Product, product => product.local)
     product: Product;
     
 }
