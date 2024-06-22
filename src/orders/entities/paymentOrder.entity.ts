@@ -5,7 +5,7 @@ import {
     ManyToOne,
     JoinColumn
 } from 'typeorm';
-import { PaymentLocal, Order } from "./";
+import { PaymentLocal, Orders } from "./";
   
   
 @Entity()
@@ -21,8 +21,8 @@ export class PaymentOrder {
     @JoinColumn()
     payment: PaymentLocal;
 
-    @ManyToOne(type => Order, order => order.id , {onDelete: 'CASCADE'})
-    order: Order;
+    @ManyToOne(type => Orders, order => order.id , {onDelete: 'CASCADE'})
+    order: Orders;
     
 }
   

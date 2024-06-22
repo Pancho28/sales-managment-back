@@ -5,7 +5,7 @@ import { OrderService } from "./order.service";
 import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
 import { DateDto } from "../helpers/date.dto";
 import { User } from "../users/entities";
-import { Order } from "./entities";
+import { Orders } from "./entities";
 
 @Controller('orders')
 export class OrderController {
@@ -20,7 +20,7 @@ export class OrderController {
     async getOrders(
         @GetUser() user: User
     ) : Promise<any> {
-        let orders : Order[];
+        let orders : Orders[];
         orders = await this.orderService.getOrders(user);
         return {
             statusCode: HttpStatus.OK,
@@ -34,7 +34,7 @@ export class OrderController {
     async getOrdersByLocal(
         @Param('id') localId: string
     ) : Promise<any> {
-        let orders : Order[];
+        let orders : Orders[];
         orders = await this.orderService.getOrdersByLocal(localId);
         return {
             statusCode: HttpStatus.OK,
@@ -48,7 +48,7 @@ export class OrderController {
     async getOrderById(
         @Param('id') orderId: string
     ) : Promise<any> {
-        let order : Order;
+        let order : Orders;
         order = await this.orderService.getOrderById(orderId);
         return {
             statusCode: HttpStatus.OK,

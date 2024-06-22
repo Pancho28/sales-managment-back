@@ -173,9 +173,9 @@ export class ProductService {
                                     .addSelect("order_item.price", "price")
                                     .addSelect("product.name", "name")
                                     .innerJoin("order_item","order_item", "order_item.productId = product.id")
-                                    .innerJoin("order","order", "order.id = order_item.orderId")
+                                    .innerJoin("orders","orders", "orders.id = order_item.orderId")
                                     .where("product.localId = :localId", { localId })
-                                    .andWhere("order.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                    .andWhere("orders.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
                                     .groupBy("order_item.price")
                                     .addGroupBy("product.name")
                                     .getRawMany();
@@ -185,9 +185,9 @@ export class ProductService {
                                     .addSelect("order_item.price", "price")
                                     .addSelect("product.name", "name")
                                     .innerJoin("order_item","order_item", "order_item.productId = product.id")
-                                    .innerJoin("order","order", "order.id = order_item.orderId")
+                                    .innerJoin("orders","orders", "orders.id = order_item.orderId")
                                     .where("product.localId = :localId", { localId })
-                                    .andWhere("date(order.creationdate) = current_date()")
+                                    .andWhere("date(orders.creationdate) = current_date()")
                                     .groupBy("order_item.price")
                                     .addGroupBy("product.name")
                                     .getRawMany();
