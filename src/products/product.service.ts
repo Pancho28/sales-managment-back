@@ -90,6 +90,7 @@ export class ProductService {
         }
         productDto.name ? product.name = productDto.name : null;
         productDto.price ? product.price = productDto.price : null;
+        product.updateDate = productDto.updateDate;
         await this.productRepository.save(product);
         this.logger.log(`Product name ${product.name} updated`);
         return product;
