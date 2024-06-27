@@ -168,7 +168,7 @@ export class OrderService {
                                         .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
                                         .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
                                         .where("orders.localId = :localId", { localId })
-                                        .andWhere("date(orders.creationdate) = current_date()")
+                                        .andWhere("orders.creationdate >= CONCAT(CURDATE(), ' 11:00:00')")
                                         .groupBy("payment_type.name")
                                         .addGroupBy("payment_type.currency")
                                         .getRawMany();

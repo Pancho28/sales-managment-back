@@ -188,7 +188,7 @@ export class ProductService {
                                     .innerJoin("order_item","order_item", "order_item.productId = product.id")
                                     .innerJoin("orders","orders", "orders.id = order_item.orderId")
                                     .where("product.localId = :localId", { localId })
-                                    .andWhere("date(orders.creationdate) = current_date()")
+                                    .andWhere("orders.creationdate >= CONCAT(CURDATE(), ' 11:00:00')")
                                     .groupBy("order_item.price")
                                     .addGroupBy("product.name")
                                     .getRawMany();
