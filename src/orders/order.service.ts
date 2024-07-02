@@ -99,6 +99,7 @@ export class OrderService {
             totalBs: data.totalBs,
             local: local
         });
+        data.delivered ? newOrder.deliveredDate = data.creationDate : null;
         await this.orderRepository.save(newOrder);
         this.logger.log(`Order with id ${newOrder.id} created for local ${local.name}`);
         const products = await this.productService.getProducts(user);
