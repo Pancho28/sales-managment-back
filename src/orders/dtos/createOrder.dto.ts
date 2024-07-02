@@ -1,4 +1,4 @@
-import { IsNumber, IsNotEmpty, IsUUID, IsPositive, ValidateNested, IsDate } from "class-validator";
+import { IsNumber, IsNotEmpty, IsUUID, IsPositive, ValidateNested, IsDate, IsBoolean } from "class-validator";
 import { Transform } from 'class-transformer';
 import { Type } from 'class-transformer';
 import { CreateOrderItemDto, CreatePaymentOrderDto } from "./";
@@ -23,6 +23,10 @@ export class CreateOrderDto {
     @IsNotEmpty()
     @IsUUID()
     localId: string;
+
+    @IsNotEmpty()
+    @IsBoolean()
+    delivered: string;
 
     @IsNotEmpty()
     @ValidateNested()
