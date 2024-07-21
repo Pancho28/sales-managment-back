@@ -25,24 +25,56 @@ export class ProductService {
 
     async getProducts(user: User) : Promise<Product[]> { 
         let products: Product[]; 
-        if (user.role != Roles.ADMIN){  
-            const localId = await this.localRepository.createQueryBuilder('local')
+        if (user.role = Roles.SELLER){  
+            const local = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.userId = :userId', { userId: user.id })
                                                 .getOne();
             products = await this.productRepository.createQueryBuilder('product')
                                                     .innerJoinAndSelect('product.category', 'category')
-                                                    .where('product.localId = :localId', { localId: localId.id })
+                                                    .where('product.localId = :localId', { localId: local.id })
                                                     .andWhere('product.status = :status', { status: 'ACTIVE' })
                                                     .getMany();
         }
-        else {
+        else if (user.role = Roles.ADMIN) {
             products = await this.productRepository.createQueryBuilder('product')
                                                     .innerJoinAndSelect('product.category', 'category')
                                                     .andWhere('product.status = :status', { status: 'ACTIVE' })
                                                     .getMany();
             
         }
+        else {
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
+        }
         return products;
+    }
+
+    async getCategoryProducts(user: User): Promise<Category[]>{
+        let categories: Category[];
+        if (user.role = Roles.SELLER){
+            const local = await this.localRepository.createQueryBuilder('local')
+                                                .where('local.userId = :userId', { userId: user.id })
+                                                .getOne();
+            categories = await this.categoryRepository.createQueryBuilder('category')
+                                                    .select('category.id')
+                                                    .addSelect('category.name')
+                                                    .addSelect('products.id')
+                                                    .addSelect('products.name')
+                                                    .addSelect('products.price')
+                                                    .addSelect('products.creationDate')
+                                                    .addSelect('products.updateDate')
+                                                    .innerJoin('category.product', 'products')
+                                                    .where('products.localId = :localId', { localId: local.id })
+                                                    .getMany();
+        }
+        else if (user.role = Roles.ADMIN){
+            categories = await this.categoryRepository.createQueryBuilder('category')
+                                                    .innerJoinAndSelect('category.product', 'products')
+                                                    .getMany();
+        }
+        else{
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
+        }
+        return categories;
     }
 
     async createProduct(product: CreateProductDto) : Promise<Product> {

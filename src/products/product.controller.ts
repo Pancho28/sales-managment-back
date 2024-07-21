@@ -29,6 +29,22 @@ export class ProductController {
             products
         };
     }
+    
+    @Get('byCategory')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getCategoryProducts(
+        @GetUser() user: User 
+    ): Promise<any> {
+        let products: Category[];
+
+        products = await this.productService.getCategoryProducts(user);
+
+        return {
+            statusCode: HttpStatus.OK,
+            products
+        };
+    }
 
     @Post()
     @UseGuards(JwtAuthGuard)

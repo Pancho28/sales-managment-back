@@ -39,6 +39,9 @@ export class User {
   @Column({ type: 'timestamp', nullable: true, default: null})
   lastLogin: Date;
 
+  @Column({ type: 'varchar', nullable: true, default: null})
+  email: string;
+
   @OneToMany(() => UserAccess, userAccess => userAccess.user)
   userAccess: UserAccess;
 

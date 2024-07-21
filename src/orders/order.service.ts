@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { Orders, OrderItem, PaymentType, PaymentOrder, PaymentLocal } from "./entities";
+import { Orders, OrderItem, PaymentType, PaymentOrder, PaymentLocal, CustomerInformation } from "./entities";
 import { Local, User } from "../users/entities";
 import { ProductService } from "../products/product.service";
 import { Repository } from 'typeorm';
@@ -26,7 +26,9 @@ export class OrderService {
         @InjectRepository(PaymentOrder)
         private paymentOrderRepository: Repository<PaymentOrder>,
         @InjectRepository(Local)
-        private localRepository: Repository<Local>
+        private localRepository: Repository<Local>,
+        @InjectRepository(CustomerInformation)
+        private customerInformationRepository: Repository<CustomerInformation>
     )
     {
         this.logger = new Logger(OrderService.name);
@@ -120,7 +122,7 @@ export class OrderService {
         const payments = await this.paymentRepository.createQueryBuilder('payment')
                                                     .innerJoinAndSelect('payment.paymentType', 'paymentType')
                                                     .where('payment.localId = :localId', { localId: local.id })
-                                                    .getMany();
+                                                    .getMany();                                                  
         for (const payment of data.payments){
             const paymentType = payments.find(p => p.paymentType.id === payment.paymentTypeId);
             if (!paymentType){
@@ -129,10 +131,20 @@ export class OrderService {
             const newPaymentOrder = this.paymentOrderRepository.create({
                 amount: payment.amount,
                 payment: paymentType,
-                order: newOrder
+                order: newOrder,
+                isPaid: payment.isPaid
             });
             await this.paymentOrderRepository.save(newPaymentOrder);
             this.logger.log(`PaymentOrder created for paymentType ${paymentType.paymentType.name} ${paymentType.paymentType.currency} in local ${local.name}`);
+            if (payment.isPaid === false){
+                const newCustomerInformation = this.customerInformationRepository.create({
+                    paymentOrder: newPaymentOrder,
+                    name: payment.customer.name,
+                    lastName: payment.customer.lastName ? payment.customer.lastName : null,
+                });
+                await this.customerInformationRepository.save(newCustomerInformation);
+                this.logger.log(`CustomerInformation created for paymentOrder ${newPaymentOrder.id}`);
+            }
         }
         // se trae la orden completa para poder colocarla como orden sin entrega
         const order = await this.orderRepository.createQueryBuilder('orders')
