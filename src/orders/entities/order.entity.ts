@@ -6,7 +6,7 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
-import { OrderItem } from "./";
+import { OrderItem, PaymentOrder } from "./";
 import { Local } from "../../users/entities";
   
   
@@ -34,6 +34,9 @@ export class Orders {
 
     @OneToMany(() => OrderItem, orderItem => orderItem.order)
     orderItem: OrderItem;
+
+    @OneToMany(() => PaymentOrder, paymentOrder => paymentOrder.order)
+    paymentOrder: PaymentOrder;
     
 }
   
