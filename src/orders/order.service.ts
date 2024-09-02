@@ -358,10 +358,10 @@ export class OrderService {
             }
         }
         const paymenLocal = await this.paymentRepository.createQueryBuilder('paymentLocal')
-                                                    .where('paymentLocal.paymentTypeId = :paymentId', { paymentId: data.payments[0].paymentId })
+                                                    .where('paymentLocal.paymentTypeId = :paymentId', { paymentId: data.payments[0].paymentTypeId })
                                                     .getOne();
         if (!paymenLocal){
-            throw new NotFoundException(`Tipo de pago con id ${data.payments[0].paymentId} no encontrado`);
+            throw new NotFoundException(`Tipo de pago con id ${data.payments[0].paymentTypeId} no encontrado`);
         }
         const paymentOrder = await this.paymentOrderRepository.createQueryBuilder('paymentOrder')
                                                     .where('paymentOrder.orderId = :orderId', { orderId })
@@ -376,10 +376,10 @@ export class OrderService {
         if (data.payments.length > 1){
             for (let i = 1; i < data.payments.length; i++){
                 const payment = await this.paymentRepository.createQueryBuilder('paymentLocal')
-                                                    .where('paymentLocal.paymentTypeId = :paymentId', { paymentId: data.payments[i].paymentId })
+                                                    .where('paymentLocal.paymentTypeId = :paymentId', { paymentId: data.payments[i].paymentTypeId })
                                                     .getOne();
                 if (!payment){
-                    throw new NotFoundException(`Tipo de pago con id ${data.payments[i].paymentId} no encontrado`);
+                    throw new NotFoundException(`Tipo de pago con id ${data.payments[i].paymentTypeId} no encontrado`);
                 }
                 const newPaymentOrder = this.paymentOrderRepository.create({
                     amount: data.payments[i].amount,

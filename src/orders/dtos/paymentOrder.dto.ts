@@ -4,7 +4,7 @@ export class PaymentOrderDto {
         
     @IsNotEmpty()
     @IsUUID()
-    paymentId: string;
+    paymentTypeId: string;
 
     @IsNotEmpty()
     @IsNumber()
