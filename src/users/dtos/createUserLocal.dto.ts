@@ -1,4 +1,4 @@
-import { IsNumber, IsNotEmpty, IsString, MaxLength, IsDate, IsPositive } from "class-validator";
+import { IsNumber, IsNotEmpty, IsString, MaxLength, IsDate, IsPositive, IsOptional, IsEmail } from "class-validator";
 import { Transform } from 'class-transformer';
 
 export class CreateUserLocalDto {
@@ -22,6 +22,11 @@ export class CreateUserLocalDto {
     @IsNumber()
     @IsPositive()
     dolar: number;
+    
+    @MaxLength(50)
+    @IsOptional()
+    @IsEmail()
+    email: string;
         
     @IsNotEmpty()
     @Transform( ({ value }) => new Date(value))

@@ -26,7 +26,7 @@ export class CreateOrderDto {
 
     @IsNotEmpty()
     @IsBoolean()
-    delivered: string;
+    delivered: boolean;
 
     @IsNotEmpty()
     @ValidateNested()
