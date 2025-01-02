@@ -34,7 +34,7 @@ export class AuthorizationService {
       accesUser.push({
         id: acces.id,
         name: acces.name,
-        reqPass : acces.userAccess[0] ?  true : false
+        pass : acces.userAccess[0] ?  acces.userAccess[0].password : null
       })
     })
     const {id, username, role, tz} = user;
