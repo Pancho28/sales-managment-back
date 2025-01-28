@@ -62,6 +62,7 @@ export class ProductService {
                                                     .addSelect('products.price')
                                                     .addSelect('products.creationDate')
                                                     .addSelect('products.updateDate')
+                                                    .addSelect('products.status')
                                                     .innerJoin('category.product', 'products')
                                                     .where('products.localId = :localId', { localId: local.id })
                                                     .getMany();
