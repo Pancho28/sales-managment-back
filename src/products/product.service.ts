@@ -5,6 +5,7 @@ import { CreateProductDto, CategoryDto, UpdateProductDto } from "./dtos";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles } from "../helpers/enum";
+import { Status } from "../helpers/enum";
 
 @Injectable()
 export class ProductService {
@@ -25,20 +26,20 @@ export class ProductService {
 
     async getProducts(user: User) : Promise<Product[]> { 
         let products: Product[]; 
-        if (user.role = Roles.SELLER){  
+        if (user.role === Roles.SELLER){  
             const local = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.userId = :userId', { userId: user.id })
                                                 .getOne();
             products = await this.productRepository.createQueryBuilder('product')
                                                     .innerJoinAndSelect('product.category', 'category')
                                                     .where('product.localId = :localId', { localId: local.id })
-                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                    .andWhere('product.status = :status', { status: Status.ACTIVE })
                                                     .getMany();
         }
-        else if (user.role = Roles.ADMIN) {
+        else if (user.role === Roles.ADMIN) {
             products = await this.productRepository.createQueryBuilder('product')
                                                     .innerJoinAndSelect('product.category', 'category')
-                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                    .andWhere('product.status = :status', { status: Status.ACTIVE })
                                                     .getMany();
             
         }
@@ -50,7 +51,7 @@ export class ProductService {
 
     async getCategoryProducts(user: User): Promise<Category[]>{
         let categories: Category[];
-        if (user.role = Roles.SELLER){
+        if (user.role === Roles.SELLER){
             const local = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.userId = :userId', { userId: user.id })
                                                 .getOne();
@@ -67,7 +68,7 @@ export class ProductService {
                                                     .where('products.localId = :localId', { localId: local.id })
                                                     .getMany();
         }
-        else if (user.role = Roles.ADMIN){
+        else if (user.role === Roles.ADMIN){
             categories = await this.categoryRepository.createQueryBuilder('category')
                                                     .innerJoinAndSelect('category.product', 'products')
                                                     .getMany();
@@ -95,6 +96,7 @@ export class ProductService {
             name: product.name,
             price: product.price,
             creationDate: product.creationDate,
+            status: Status.ACTIVE,
             category,
             local
         });
@@ -178,7 +180,7 @@ export class ProductService {
         if (!product){
             throw new NotFoundException(`Producto con id ${productId} no encontrado`);
         }
-        product.status = 'ACTIVE';
+        product.status = Status.ACTIVE;
         await this.productRepository.save(product);
         this.logger.log(`Product with id ${productId} activated`);
         return product;
@@ -192,7 +194,7 @@ export class ProductService {
         if (!product){
             throw new NotFoundException(`Producto con id ${productId} no encontrado`);
         }
-        product.status = 'INACTIVE';
+        product.status = Status.INACTIVE;
         await this.productRepository.save(product);
         this.logger.log(`Product with id ${productId} inactivated`);
         return product;

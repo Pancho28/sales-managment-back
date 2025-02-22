@@ -36,7 +36,7 @@ export class OrderService {
 
     async getOrders(user : User) : Promise<Orders[]> {  
         let orders:any;
-        if (user.role = Roles.ADMIN){
+        if (user.role === Roles.ADMIN){
             orders = await this.orderRepository.createQueryBuilder('orders')
                                                     .innerJoinAndSelect('orders.orderItem', 'orderItem')
                                                     .innerJoinAndSelect('orderItem.product','product')
@@ -188,26 +188,32 @@ export class OrderService {
         if (user.role != Roles.ADMIN){
             throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
         }
-        const paymentTypeExist = await this.paymentTypeRepository.findOneBy({ name: data.name, currency: data.currency});
-        if (paymentTypeExist){
-            throw new BadRequestException(`Tipo de pago con nombre ${data.name} ya existe`);
+        let paymentType = await this.paymentTypeRepository.findOneBy({ name: data.name, currency: data.currency});
+        if (!paymentType){
+            const newPaymentType = this.paymentTypeRepository.create({
+                name: data.name,
+                currency: data.currency
+            });
+            paymentType = await this.paymentTypeRepository.save(newPaymentType);
         }
         const local = await this.localRepository.findOneBy({ id: data.localId });
         if (!local){
             throw new NotFoundException(`Local con id ${data.localId} no encontrado`);
         }
-        const newPaymentType = this.paymentTypeRepository.create({
-            name: data.name,
-            currency: data.currency
-        });
-        await this.paymentTypeRepository.save(newPaymentType);
+        const paymentLocal = await this.paymentRepository.createQueryBuilder('paymentLocal')
+                                                    .where('paymentLocal.paymentTypeId = :paymentId', { paymentId: paymentType.id })
+                                                    .andWhere('paymentLocal.localId = :localId', { localId: local.id })
+                                                    .getOne();
+        if (paymentLocal){
+            throw new BadRequestException(`Tipo de pago ${paymentType.name} ${paymentType.currency} ya existe en local ${local.name}`);
+        }
         const newPayment = this.paymentRepository.create({
-            paymentType: newPaymentType,
+            paymentType: paymentType,
             local
         });
         await this.paymentRepository.save(newPayment);
-        this.logger.log(`PaymentType with name ${newPaymentType.name} created`);
-        return newPaymentType;
+        this.logger.log(`PaymentType with name ${paymentType.name} was added to local ${local.name}`);
+        return paymentType;
     }
 
     async updatePaymentType(user: User, id: string, data: UpdatePaymentTypeDto) : Promise<void> {
@@ -228,7 +234,7 @@ export class OrderService {
     }
 
     async getPaymentTypes(user : User) : Promise<PaymentType[]> {
-        if (user.role = Roles.ADMIN){
+        if (user.role === Roles.ADMIN){
             const paymentTypes = await this.paymentTypeRepository.find();
             return paymentTypes;
         }
