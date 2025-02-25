@@ -235,4 +235,45 @@ export class ProductService {
         return productsSummaryByPrice;
     }
 
+    async getProductsSummaryForEmployee (localId: string, date: Date){
+        const hours = date.getHours();
+        let productsSummaryForEmployee : any;
+        if (hours >= 0 && hours <= 6){
+            productsSummaryForEmployee = await this.productRepository.createQueryBuilder("product")
+                                    .select("SUM(order_item.quantity)", "quantity")
+                                    .addSelect("order_item.price", "price")
+                                    .addSelect("product.name", "name")
+                                    .innerJoin("order_item","order_item", "order_item.productId = product.id")
+                                    .innerJoin("orders","orders", "orders.id = order_item.orderId")
+                                    .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
+                                    .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
+                                    .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
+                                    .where("product.localId = :localId", { localId })
+                                    .andWhere("payment_order.isPaid = false")
+                                    .andWhere("payment_type.name = 'Para Empleado'")
+                                    .andWhere("orders.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                    .groupBy("order_item.price")
+                                    .addGroupBy("product.name")
+                                    .getRawMany();
+        }else {   
+        productsSummaryForEmployee = await this.productRepository.createQueryBuilder("product")
+                                .select("SUM(order_item.quantity)", "quantity")
+                                .addSelect("order_item.price", "price")
+                                .addSelect("product.name", "name")
+                                .innerJoin("order_item","order_item", "order_item.productId = product.id")
+                                .innerJoin("orders","orders", "orders.id = order_item.orderId")
+                                .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
+                                .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
+                                .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
+                                .where("product.localId = :localId", { localId })
+                                .andWhere("payment_order.isPaid = false")
+                                .andWhere("payment_type.name = 'Para Empleado'")
+                                .andWhere("orders.creationdate >= CONCAT(CURDATE(), ' 11:00:00')")
+                                .groupBy("order_item.price")
+                                .addGroupBy("product.name")
+                                .getRawMany();
+        }
+        return productsSummaryForEmployee;
+    }
+
 }

@@ -136,7 +136,7 @@ export class OrderService {
             });
             await this.paymentOrderRepository.save(newPaymentOrder);
             this.logger.log(`PaymentOrder created for paymentType ${paymentType.paymentType.name} ${paymentType.paymentType.currency} in local ${local.name}`);
-            if (payment.isPaid === false){
+            if (payment.customer){
                 const newCustomerInformation = this.customerInformationRepository.create({
                     paymentOrder: newPaymentOrder,
                     name: payment.customer.name,

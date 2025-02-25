@@ -177,4 +177,21 @@ export class ProductController {
         };
     }
 
+    @Post('/summaryForEmployee/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getSummaryForEmployee(
+        @Param('id') localId: string,
+        @Body() dto: DateDto
+    ): Promise<any> {
+        let summary: any;
+
+        summary = await this.productService.getProductsSummaryForEmployee(localId, dto.date);
+
+        return {
+            statusCode: HttpStatus.OK,
+            summary
+        };
+    }
+
 }
