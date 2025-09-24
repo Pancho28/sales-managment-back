@@ -29,6 +29,22 @@ export class ProductController {
             products
         };
     }
+    
+    @Get('byCategory')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getCategoryProducts(
+        @GetUser() user: User 
+    ): Promise<any> {
+        let products: Category[];
+
+        products = await this.productService.getCategoryProducts(user);
+
+        return {
+            statusCode: HttpStatus.OK,
+            products
+        };
+    }
 
     @Post()
     @UseGuards(JwtAuthGuard)
@@ -154,6 +170,23 @@ export class ProductController {
         let summary: any;
 
         summary = await this.productService.getProductsSummaryByPrice(localId, dto.date);
+
+        return {
+            statusCode: HttpStatus.OK,
+            summary
+        };
+    }
+
+    @Post('/summaryForEmployee/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getSummaryForEmployee(
+        @Param('id') localId: string,
+        @Body() dto: DateDto
+    ): Promise<any> {
+        let summary: any;
+
+        summary = await this.productService.getProductsSummaryForEmployee(localId, dto.date);
 
         return {
             statusCode: HttpStatus.OK,

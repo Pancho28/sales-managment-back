@@ -1,4 +1,6 @@
-import { IsNumber, IsNotEmpty, IsUUID, IsPositive } from "class-validator";
+import { IsNumber, IsNotEmpty, IsUUID, IsPositive, IsBoolean, IsOptional, ValidateNested } from "class-validator";
+import { Type } from 'class-transformer';
+import { CreateCustomerInformationDto } from "./";
 
 export class CreatePaymentOrderDto {
         
@@ -10,5 +12,14 @@ export class CreatePaymentOrderDto {
     @IsNotEmpty()
     @IsUUID()
     paymentTypeId: string;
+
+    @IsNotEmpty()
+    @IsBoolean()
+    isPaid: boolean;
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => CreateCustomerInformationDto)
+    customer: CreateCustomerInformationDto;
 
 }

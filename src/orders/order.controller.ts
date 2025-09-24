@@ -2,7 +2,7 @@ import { Controller, Get, Post, UseGuards, HttpStatus, HttpCode, Put, Param, Bod
 import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { OrderService } from "./order.service";
-import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto } from "./dtos";
+import { CreateOrderDto, CreatePaymentTypeDto, UpdatePaymentTypeDto, PaidOrderDto } from "./dtos";
 import { DateDto } from "../helpers/date.dto";
 import { User } from "../users/entities";
 import { Orders } from "./entities";
@@ -63,11 +63,10 @@ export class OrderController {
         @GetUser() user: User,
         @Body() dto: CreateOrderDto
     ): Promise<any> {
-        const newOrder = await this.orderService.createorder(dto, user);
+        await this.orderService.createorder(dto, user);
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Orden creada',
-            order: newOrder
+            message: 'Orden creada'
         };
     }
 
@@ -152,6 +151,34 @@ export class OrderController {
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Orden entregada'
+        };
+    }
+
+    @Get('/unpaid/all')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getOrdersUnpaid(
+        @GetUser() user: User
+    ): Promise<any> {
+        const orders = await this.orderService.getOrdersUnpaid(user);
+        return {
+            statusCode: HttpStatus.OK,
+            orders
+        };
+    }
+
+    @Post('/unpaid/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async orderPaid(
+        @GetUser() user: User,
+        @Param('id') orderId: string,
+        @Body() dto: PaidOrderDto
+    ): Promise<any> {
+        await this.orderService.orderPaid(user,orderId,dto);
+        return {
+            statusCode: HttpStatus.CREATED,
+            message: 'Orden pagada'
         };
     }
 

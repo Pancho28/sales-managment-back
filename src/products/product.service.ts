@@ -5,6 +5,7 @@ import { CreateProductDto, CategoryDto, UpdateProductDto } from "./dtos";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles } from "../helpers/enum";
+import { Status } from "../helpers/enum";
 
 @Injectable()
 export class ProductService {
@@ -25,24 +26,57 @@ export class ProductService {
 
     async getProducts(user: User) : Promise<Product[]> { 
         let products: Product[]; 
-        if (user.role != Roles.ADMIN){  
-            const localId = await this.localRepository.createQueryBuilder('local')
+        if (user.role === Roles.SELLER){  
+            const local = await this.localRepository.createQueryBuilder('local')
                                                 .where('local.userId = :userId', { userId: user.id })
                                                 .getOne();
             products = await this.productRepository.createQueryBuilder('product')
                                                     .innerJoinAndSelect('product.category', 'category')
-                                                    .where('product.localId = :localId', { localId: localId.id })
-                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                    .where('product.localId = :localId', { localId: local.id })
+                                                    .andWhere('product.status = :status', { status: Status.ACTIVE })
                                                     .getMany();
         }
-        else {
+        else if (user.role === Roles.ADMIN) {
             products = await this.productRepository.createQueryBuilder('product')
                                                     .innerJoinAndSelect('product.category', 'category')
-                                                    .andWhere('product.status = :status', { status: 'ACTIVE' })
+                                                    .andWhere('product.status = :status', { status: Status.ACTIVE })
                                                     .getMany();
             
         }
+        else {
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
+        }
         return products;
+    }
+
+    async getCategoryProducts(user: User): Promise<Category[]>{
+        let categories: Category[];
+        if (user.role === Roles.SELLER){
+            const local = await this.localRepository.createQueryBuilder('local')
+                                                .where('local.userId = :userId', { userId: user.id })
+                                                .getOne();
+            categories = await this.categoryRepository.createQueryBuilder('category')
+                                                    .select('category.id')
+                                                    .addSelect('category.name')
+                                                    .addSelect('products.id')
+                                                    .addSelect('products.name')
+                                                    .addSelect('products.price')
+                                                    .addSelect('products.creationDate')
+                                                    .addSelect('products.updateDate')
+                                                    .addSelect('products.status')
+                                                    .innerJoin('category.product', 'products')
+                                                    .where('products.localId = :localId', { localId: local.id })
+                                                    .getMany();
+        }
+        else if (user.role === Roles.ADMIN){
+            categories = await this.categoryRepository.createQueryBuilder('category')
+                                                    .innerJoinAndSelect('category.product', 'products')
+                                                    .getMany();
+        }
+        else{
+            throw new UnauthorizedException(`Usuario ${user.username} no tiene permiso`);
+        }
+        return categories;
     }
 
     async createProduct(product: CreateProductDto) : Promise<Product> {
@@ -62,6 +96,7 @@ export class ProductService {
             name: product.name,
             price: product.price,
             creationDate: product.creationDate,
+            status: Status.ACTIVE,
             category,
             local
         });
@@ -145,7 +180,7 @@ export class ProductService {
         if (!product){
             throw new NotFoundException(`Producto con id ${productId} no encontrado`);
         }
-        product.status = 'ACTIVE';
+        product.status = Status.ACTIVE;
         await this.productRepository.save(product);
         this.logger.log(`Product with id ${productId} activated`);
         return product;
@@ -159,7 +194,7 @@ export class ProductService {
         if (!product){
             throw new NotFoundException(`Producto con id ${productId} no encontrado`);
         }
-        product.status = 'INACTIVE';
+        product.status = Status.INACTIVE;
         await this.productRepository.save(product);
         this.logger.log(`Product with id ${productId} inactivated`);
         return product;
@@ -175,7 +210,9 @@ export class ProductService {
                                     .addSelect("product.name", "name")
                                     .innerJoin("order_item","order_item", "order_item.productId = product.id")
                                     .innerJoin("orders","orders", "orders.id = order_item.orderId")
+                                    .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
                                     .where("product.localId = :localId", { localId })
+                                    .andWhere("payment_order.isPaid = true")
                                     .andWhere("orders.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
                                     .groupBy("order_item.price")
                                     .addGroupBy("product.name")
@@ -187,13 +224,56 @@ export class ProductService {
                                     .addSelect("product.name", "name")
                                     .innerJoin("order_item","order_item", "order_item.productId = product.id")
                                     .innerJoin("orders","orders", "orders.id = order_item.orderId")
+                                    .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
                                     .where("product.localId = :localId", { localId })
+                                    .andWhere("payment_order.isPaid = true")
                                     .andWhere("orders.creationdate >= CONCAT(CURDATE(), ' 11:00:00')")
                                     .groupBy("order_item.price")
                                     .addGroupBy("product.name")
                                     .getRawMany();
         }
         return productsSummaryByPrice;
+    }
+
+    async getProductsSummaryForEmployee (localId: string, date: Date){
+        const hours = date.getHours();
+        let productsSummaryForEmployee : any;
+        if (hours >= 0 && hours <= 6){
+            productsSummaryForEmployee = await this.productRepository.createQueryBuilder("product")
+                                    .select("SUM(order_item.quantity)", "quantity")
+                                    .addSelect("order_item.price", "price")
+                                    .addSelect("product.name", "name")
+                                    .innerJoin("order_item","order_item", "order_item.productId = product.id")
+                                    .innerJoin("orders","orders", "orders.id = order_item.orderId")
+                                    .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
+                                    .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
+                                    .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
+                                    .where("product.localId = :localId", { localId })
+                                    .andWhere("payment_order.isPaid = false")
+                                    .andWhere("payment_type.name = 'Para Empleado'")
+                                    .andWhere("orders.creationdate >= CONCAT(DATE_ADD(CURDATE(), INTERVAL -1 DAY), ' 11:00:00')")
+                                    .groupBy("order_item.price")
+                                    .addGroupBy("product.name")
+                                    .getRawMany();
+        }else {   
+        productsSummaryForEmployee = await this.productRepository.createQueryBuilder("product")
+                                .select("SUM(order_item.quantity)", "quantity")
+                                .addSelect("order_item.price", "price")
+                                .addSelect("product.name", "name")
+                                .innerJoin("order_item","order_item", "order_item.productId = product.id")
+                                .innerJoin("orders","orders", "orders.id = order_item.orderId")
+                                .innerJoin("payment_order","payment_order","orders.id = payment_order.orderId")
+                                .innerJoin("payment_local","payment","payment_order.paymentId = payment.id")
+                                .innerJoin("payment_type","payment_type","payment.paymentTypeId = payment_type.id")
+                                .where("product.localId = :localId", { localId })
+                                .andWhere("payment_order.isPaid = false")
+                                .andWhere("payment_type.name = 'Para Empleado'")
+                                .andWhere("orders.creationdate >= CONCAT(CURDATE(), ' 11:00:00')")
+                                .groupBy("order_item.price")
+                                .addGroupBy("product.name")
+                                .getRawMany();
+        }
+        return productsSummaryForEmployee;
     }
 
 }
