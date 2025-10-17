@@ -33,6 +33,9 @@ export class User {
   @Column({ type: 'varchar', default: 'America/Caracas'})
   tz: string;
 
+  @Column({ type: 'int', default: 0})
+  loginAttempts : number;
+
   @Column({ type: 'datetime', readonly: true})
   creationDate: Date;
 
