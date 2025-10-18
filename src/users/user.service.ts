@@ -5,7 +5,7 @@ import { CreateUserLocalDto, CreateAccessDto, UpdateAccessDto, GrantUserAccessDt
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { hash } from 'bcryptjs';
-import { Roles } from "../helpers/enum";
+import { Roles, Status } from "../helpers/enum";
 
 @Injectable()
 export class UserService implements OnModuleInit{
@@ -74,9 +74,6 @@ export class UserService implements OnModuleInit{
         if (!user){
             throw new NotFoundException(`Usuario ${username} no existe`);
         }
-        if (user.status === 'INACTIVE' && admin.role != Roles.ADMIN){
-            throw new BadRequestException(`Usuario ${user.id} inactivo`);
-        }
         return user;
     }
 
@@ -110,6 +107,7 @@ export class UserService implements OnModuleInit{
 
     async updateLastLogin(user: User, date: Date) : Promise<void> {
         user.lastLogin = date;
+        user.loginAttempts = 0;
         await this.userRepository.save(user);
     }
 
@@ -190,6 +188,17 @@ export class UserService implements OnModuleInit{
         local.name = name;
         await this.localRepository.save(local);
         this.logger.log(`Name updated for local with name ${name}`);
+    }
+
+    async updateLoginAttempts(user: User, attempts: number): Promise<void> {
+        if (user.loginAttempts  > 4 && user.role === Roles.SELLER) {
+            user.status = Status.INACTIVE;
+            await this.userRepository.save(user);
+            this.logger.log(`User with username ${user.username} inactivated for max login attempts`);
+            attempts = 0;
+        }
+        user.loginAttempts = attempts;
+        await this.userRepository.save(user);
     }
 
     async createAccess(user: User, access: CreateAccessDto) : Promise<void> {

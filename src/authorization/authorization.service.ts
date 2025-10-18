@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dtos/login.dto';
 import { compare } from 'bcrypt';
 import { UserService } from '../users/user.service';
 import { User, Local, Access } from '../users/entities';
+import { Status } from '../helpers/enum';
 import * as moment from "moment-timezone";
 
 @Injectable()
@@ -21,8 +22,17 @@ export class AuthorizationService {
 
   async validateUser(username: string, password: string) {
       const user = await this.userService.getUserByUsername(username);
-      if (user && await compare(password, user.password)){ return user};
-      return null;
+      if (!user) {
+        throw new UnauthorizedException('Usuario no existe');
+      }
+      if (user.status === Status.INACTIVE) {
+        throw new UnauthorizedException('El usuario está inactivo');
+      }
+      if (!await compare(password, user.password)){ 
+        await this.maxLoginAttempts(user);
+        throw new UnauthorizedException('La contraseña es incorrecta');
+      };
+      return user;
   }
 
   async login( loginDto : LoginDto ) : Promise<any> { 
@@ -52,6 +62,10 @@ export class AuthorizationService {
     this.userService.updateLastLogin(user, date);
     this.logger.log(`Login attempt with username: ${loginDto.username} at ${date}`);
     return response;
+  }
+
+  async maxLoginAttempts(user: User): Promise<any> {
+    await this.userService.updateLoginAttempts(user, user.loginAttempts + 1);
   }
 
 }
