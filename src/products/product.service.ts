@@ -4,8 +4,7 @@ import { Product, Category } from "./entities";
 import { CreateProductDto, CategoryDto, UpdateProductDto } from "./dtos";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Roles } from "../helpers/enum";
-import { Status } from "../helpers/enum";
+import { Roles, Status } from "../helpers/enum";
 
 @Injectable()
 export class ProductService {
@@ -125,6 +124,7 @@ export class ProductService {
         }
         productDto.name ? product.name = productDto.name : null;
         productDto.price ? product.price = productDto.price : null;
+        product.status = Status.ACTIVE;
         product.updateDate = productDto.updateDate;
         await this.productRepository.save(product);
         this.logger.log(`Product name ${product.name} updated`);
