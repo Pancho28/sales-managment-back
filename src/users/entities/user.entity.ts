@@ -9,6 +9,7 @@ import {
 import { hash } from 'bcryptjs';
 import { UserAccess } from './userAccess.entity';
 import { Local } from "./local.entity";
+import { Roles, Status } from '../../helpers/enum';
 
 
 @Entity()
@@ -24,10 +25,10 @@ export class User {
   @Column()
   password: string;
 
-  @Column({type: 'varchar', default: 'SELLER'})
+  @Column({type: 'varchar', default: Roles.SELLER})
   role: string;
 
-  @Column({ type: 'varchar', default: 'ACTIVE'})
+  @Column({ type: 'varchar', default: Status.ACTIVE})
   status: string;
 
   @Column({ type: 'varchar', default: 'America/Caracas'})

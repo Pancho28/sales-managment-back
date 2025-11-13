@@ -73,11 +73,22 @@ export class UserController {
         @Body() data: CreateUserLocalDto
     ): Promise<any> {
 
-        await this.userService.createUser(user,data);
+        const { newUser, newLocal } = await this.userService.createUser(user,data);
+
+        const newUserResponse = {
+            id: newUser.id,
+            username: newUser.username,
+            role: newUser.role,
+            status: newUser.status,
+            tz: newUser.tz,
+            lastLogin: newUser.lastLogin,
+            local: [{name: newLocal.name}]
+        }
 
         return {
             statusCode: HttpStatus.CREATED,
-            message: 'Usuario creado exitosamente'
+            message: 'Usuario creado exitosamente',
+            user: newUserResponse
         };
     }
 

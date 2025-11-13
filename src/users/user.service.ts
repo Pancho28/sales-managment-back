@@ -80,6 +80,8 @@ export class UserService implements OnModuleInit{
     async getUsers(user: User) : Promise<User[]> {     
         this.validateAdmin(user);
         const users = await this.userRepository.createQueryBuilder('user')
+                                                .select(['user.id', 'user.username', 'user.role', 'user.status', 'user.creationDate', 'user.lastLogin', 'user.tz', 'user.loginAttempts','user.email'])
+                                                .innerJoinAndSelect('user.local', 'local')
                                                 .where('user.role != :role', { role : Roles.ADMIN })
                                                 .getMany();
         return users;
@@ -120,7 +122,8 @@ export class UserService implements OnModuleInit{
         const newUser = this.userRepository.create({
             username: dto.username,
             password: dto.password,
-            creationDate: dto.creationDate
+            creationDate: dto.creationDate,
+            tz: dto?.tz
         });
         await this.userRepository.save(newUser);
         this.logger.log(`User with username ${newUser.username} created`);
