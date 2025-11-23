@@ -3,7 +3,7 @@ import { UserService } from "./user.service";
 import { JwtAuthGuard } from '../authorization/guards';
 import { GetUser } from '../authorization/decorators';
 import { User } from './entities/user.entity';
-import { CreateUserLocalDto, ChangePasswordDto, UpdateDolarlDto, CreateAccessDto, 
+import { CreateUserLocalDto, ChangePasswordDto, UpdateDolarlDto, CreateAccessDto, UpdateUserLocalDto,
     UpdateAccessDto, GrantUserAccessDto, RemoveUserAccessDto, UpdateLocalNameDto } from './dtos';
 
 @Controller('users')
@@ -73,22 +73,30 @@ export class UserController {
         @Body() data: CreateUserLocalDto
     ): Promise<any> {
 
-        const { newUser, newLocal } = await this.userService.createUser(user,data);
-
-        const newUserResponse = {
-            id: newUser.id,
-            username: newUser.username,
-            role: newUser.role,
-            status: newUser.status,
-            tz: newUser.tz,
-            lastLogin: newUser.lastLogin,
-            local: [{name: newLocal.name}]
-        }
+        const newUser = await this.userService.createUser(user,data);
 
         return {
             statusCode: HttpStatus.CREATED,
             message: 'Usuario creado exitosamente',
-            user: newUserResponse
+            user: newUser
+        };
+    }
+
+    @Put('/:id')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.CREATED)
+    async updateUser(
+        @GetUser() user: User,
+        @Param('id') userId: string,
+        @Body() data: UpdateUserLocalDto
+    ): Promise<any> {
+
+        const modifyUser = await this.userService.updateUser(user,userId,data);
+
+        return {
+            statusCode: HttpStatus.OK,
+            message: 'Usuario actualizado exitosamente',
+            user: modifyUser
         };
     }
 

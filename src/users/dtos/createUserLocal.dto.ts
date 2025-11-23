@@ -29,7 +29,7 @@ export class CreateUserLocalDto {
     email: string;
     
     @MaxLength(50)
-    @IsOptional()
+    @IsNotEmpty()
     @IsString()
     tz: string;
         
