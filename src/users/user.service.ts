@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User, Local, Access, UserAccess } from "./entities";
-import { CreateUserLocalDto, CreateAccessDto, UpdateAccessDto, GrantUserAccessDto, RemoveUserAccessDto } from "./dtos";
+import { CreateUserLocalDto, CreateAccessDto, UpdateAccessDto, GrantUserAccessDto, RemoveUserAccessDto, UpdateUserLocalDto } from "./dtos";
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { hash } from 'bcryptjs';
@@ -80,6 +80,8 @@ export class UserService implements OnModuleInit{
     async getUsers(user: User) : Promise<User[]> {     
         this.validateAdmin(user);
         const users = await this.userRepository.createQueryBuilder('user')
+                                                .select(['user.id', 'user.username', 'user.role', 'user.status', 'user.creationDate', 'user.lastLogin', 'user.tz', 'user.loginAttempts','user.email'])
+                                                .innerJoinAndSelect('user.local', 'local')
                                                 .where('user.role != :role', { role : Roles.ADMIN })
                                                 .getMany();
         return users;
@@ -117,11 +119,14 @@ export class UserService implements OnModuleInit{
         if (userExist) {
             throw new BadRequestException(`Usuario ${user.id} ya existe`);
         };
-        const newUser = this.userRepository.create({
+        const userData = {
             username: dto.username,
             password: dto.password,
             creationDate: dto.creationDate
-        });
+        }
+        if (dto.email) userData['email'] = dto.email;
+        if (dto.tz) userData['tz'] = dto.tz;
+        const newUser = this.userRepository.create(userData);
         await this.userRepository.save(newUser);
         this.logger.log(`User with username ${newUser.username} created`);
         const newLocal =  this.localRepository.create({
@@ -131,7 +136,51 @@ export class UserService implements OnModuleInit{
         });
         await this.localRepository.save(newLocal);
         this.logger.log(`Local with name ${newLocal.name} created`); 
-        return {newUser, newLocal};
+        const newUserResponse = {
+            id: newUser.id,
+            username: newUser.username,
+            role: newUser.role,
+            status: newUser.status,
+            tz: newUser.tz,
+            lastLogin: newUser.lastLogin,
+            email: newUser.email,
+            local: [{name: newLocal.name}]
+        }
+        return newUserResponse;
+    }
+
+    async updateUser(user: User, userId:string, dto: UpdateUserLocalDto) : Promise<any> {
+        this.validateAdmin(user);  
+        const userExist = await this.getUserById(userId);
+        if (!userExist) {
+            throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
+        };
+        if (dto.username) userExist.username = dto.username;
+        if (dto.email) userExist.email = dto.email;
+        if (dto.tz) userExist.tz = dto.tz;
+        await this.userRepository.save(userExist);
+        this.logger.log(`User with username ${userExist.username} updated`);
+        const userResponse ={
+            id: userExist.id,
+            username: userExist.username,
+            role: userExist.role,
+            status: userExist.status,
+            tz: userExist.tz,
+            lastLogin: userExist.lastLogin,
+            email: userExist.email
+        };
+        const local =  await this.localRepository.createQueryBuilder('local')
+                                                .where('local.user = :userId', { userId: userExist.id })
+                                                .getOne();
+        if (!local){
+            throw new NotFoundException(`Local no encontrado para usuario con id ${userExist.id}`);
+        }
+        if (dto.localName) local.name = dto.localName;
+        if (dto.dolar) local.dolar = dto.dolar;
+        await this.localRepository.save(local);
+        this.logger.log(`Local with name ${local.name} updated`);
+        userResponse['local'] = local;
+        return userResponse;
     }
 
     async activateUser(user: User, userId: string) : Promise<void> {
@@ -140,7 +189,7 @@ export class UserService implements OnModuleInit{
         if (!activateUser){
             throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
         }
-        activateUser.status = 'ACTIVE';
+        activateUser.status = Status.ACTIVE;
         await this.userRepository.save(activateUser);
         this.logger.log(`User with username ${activateUser.username} activated`);
     }
@@ -154,7 +203,7 @@ export class UserService implements OnModuleInit{
         if (inactivateUser.username === user.username){ 
             throw new BadRequestException('No se puede desactivar este usuario');
         } 
-        inactivateUser.status = 'INACTIVE';
+        inactivateUser.status = Status.INACTIVE;
         await this.userRepository.save(inactivateUser);
         this.logger.log(`User with username ${inactivateUser.username} inactivated`);
     }
@@ -166,6 +215,8 @@ export class UserService implements OnModuleInit{
             throw new NotFoundException(`Usuario con id ${userId} no encontrado`);
         }
         newPasswordUser.password = await  hash(newPassword, 10);
+        newPasswordUser.loginAttempts = 0;
+        newPasswordUser.status = Status.ACTIVE;
         await this.userRepository.save(newPasswordUser);
         this.logger.log(`Password changed for user with username ${newPasswordUser.username}`);
     }

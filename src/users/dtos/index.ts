@@ -6,3 +6,4 @@ export * from './updateAccess.dto';
 export * from './grantUserAccess.dto';
 export * from './removeUserAccess.dto';
 export * from './updateLocalName.dto';
+export * from './updateUserLocal.dto';
