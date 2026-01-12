@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AllExceptionFilter } from "./exception-filters/all-exception.filter";
+import { TimmingInterceptor } from './interceptors/timing.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('NestApplication');
@@ -17,6 +18,8 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionFilter());
+
+  app.useGlobalInterceptors(new TimmingInterceptor());
 
   app.enableCors({
     /*origin: [

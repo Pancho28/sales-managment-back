@@ -27,6 +27,11 @@ export class CreateUserLocalDto {
     @IsOptional()
     @IsEmail()
     email: string;
+    
+    @MaxLength(50)
+    @IsNotEmpty()
+    @IsString()
+    tz: string;
         
     @IsNotEmpty()
     @Transform( ({ value }) => new Date(value))
