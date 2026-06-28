@@ -82,8 +82,22 @@ export class UserService implements OnModuleInit{
         const users = await this.userRepository.createQueryBuilder('user')
                                                 .select(['user.id', 'user.username', 'user.role', 'user.status', 'user.creationDate', 'user.lastLogin', 'user.tz', 'user.loginAttempts','user.email'])
                                                 .innerJoinAndSelect('user.local', 'local')
+                                                .leftJoinAndSelect('user.userAccess', 'userAccess')
+                                                .leftJoinAndSelect('userAccess.access', 'access')
                                                 .where('user.role != :role', { role : Roles.ADMIN })
                                                 .getMany();
+        
+        // Por cada usuario se crea un arreglo con los ids de los accesos asignados y se elimina la relación userAccess
+        users.forEach((usr) => {
+            const finalAccess = [];
+            if (Array.isArray(usr.userAccess)) {
+                usr.userAccess.forEach((ua) => {
+                    finalAccess.push(ua.access.id);
+                });
+            usr['access'] = finalAccess;
+            delete usr.userAccess;
+            }
+        });
         return users;
     }
 
@@ -356,6 +370,12 @@ export class UserService implements OnModuleInit{
         userAccessExist.password = data.password;
         await this.userAccessRepository.save(userAccessExist);
         this.logger.log(`Password access ${accessExist.name} change to user ${userExist.username}`);
+    }
+
+    async getAccess(user: User) : Promise<Access[]> {
+        this.validateAdmin(user);
+        const accesses = await this.accessRepository.find();
+        return accesses;        
     }
 
 }

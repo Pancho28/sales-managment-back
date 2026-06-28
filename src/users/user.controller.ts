@@ -181,6 +181,19 @@ export class UserController {
         };
     }
 
+    @Get('/access/all')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getAccess(
+        @GetUser() user: User
+    ): Promise<any> {
+        const accesses = await this.userService.getAccess(user);
+        return {
+            statusCode: HttpStatus.OK,
+            accesses
+        };
+    }
+
     @Post('/access')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.CREATED)
